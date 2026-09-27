@@ -1,0 +1,8 @@
+# yazi キーマップ設定
+
+[mgr]
+prepend_keymap = [
+	# Ctrl+P: macOS の Quick Look(Finder のスペースキー相当)でプレビュー
+	# pptx / xlsx / docx / PDF / 画像 / 動画など何でも見られる。閉じるのは Esc
+	{ on = "<C-p>", run = "shell --orphan -- qlmanage -p %s", desc = "Quick Look でプレビュー" },
+]

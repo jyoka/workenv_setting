@@ -1,0 +1,34 @@
+# yazi 設定
+# Enter でファイルを開いたときの動作(opener)を定義する
+
+[opener]
+# markdown ファイル用: glow のページャー表示(q キーで終了)
+markdown = [
+	{ run = "glow -p %s", block = true, desc = "glow で閲覧" },
+	{ run = "micro %s", block = true, desc = "micro で編集" },
+]
+# HTML 用: live-server で開く(保存するたびブラウザが自動リロード、Ctrl+C で終了)
+live = [
+	{ run = "~/.config/yazi/open-live-server.sh %s1", block = true, desc = "live-server で開く" },
+]
+
+[open]
+# デフォルトのルールより優先されるルール(*.md は glow で開く)
+prepend_rules = [
+	{ url = "*.md", use = "markdown" },
+	{ url = "*.markdown", use = "markdown" },
+	# HTML は Enter で live-server 起動(Shift+Enter で micro 編集なども選べる)
+	{ url = "*.{html,htm}", use = [ "live", "edit", "open" ] },
+]
+
+[plugin]
+# プレビュー欄でも md を glow で整形表示する(glow.yazi プラグイン)
+prepend_previewers = [
+	{ url = "*.md", run = "glow-md" },
+	{ url = "*.markdown", run = "glow-md" },
+	# office ファイルは LibreOffice で変換してプレビュー(office プラグイン)
+	{ url = "*.{xlsx,xls,ods}", run = "office" },
+	{ url = "*.{pptx,ppt,odp,docx,doc,odt}", run = "office" },
+	# HTML はヘッドレス Chrome でレンダリングしてプレビュー(html-view プラグイン)
+	{ url = "*.{html,htm}", run = "html-view" },
+]
