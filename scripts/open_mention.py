@@ -19,7 +19,7 @@ import subprocess
 import sys
 
 # Full path on purpose: `code` on PATH may belong to Cursor instead.
-VSCODE = "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+VSCODE_BIN = "Visual Studio Code.app/Contents/Resources/app/bin/code"
 MENTION = re.compile(r'@"([^"]+)"|@(\S+)')
 TOKEN = re.compile(r'@?"([^"]+)"|@?(\S+)')
 LINE_SUFFIX = re.compile(r"#L(\d+)(?:-\d+)?$")
@@ -44,12 +44,22 @@ def find_targets(prompt, cwd, bare_paths=False):
     return targets
 
 
+def vscode_path():
+    """/Applications first; ~/Applications when VS Code was installed without admin rights."""
+    for base in ("/Applications", os.path.expanduser("~/Applications")):
+        path = os.path.join(base, VSCODE_BIN)
+        if os.path.exists(path):
+            return path
+    return os.path.join("/Applications", VSCODE_BIN)
+
+
 def open_targets(targets):
+    vscode = vscode_path()
     for path, line in targets:
         if os.path.isdir(path):
-            args = [VSCODE, path]
+            args = [vscode, path]
         else:
-            args = [VSCODE, "-r", "-g", f"{path}:{line}" if line else path]
+            args = [vscode, "-r", "-g", f"{path}:{line}" if line else path]
         subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     names = ", ".join(os.path.basename(p.rstrip("/")) or p for p, _ in targets)
     return f"Opened in VS Code: {names}"

@@ -139,7 +139,7 @@ cp scripts/herdr_status.py ~/.config/herdr/scripts/
 
 herdr の `config.toml`(タブバー・サイドバー設定)は [herdr.md](./herdr.md) を参照して反映する。
 
-AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS Code を開く Claude Code フックを使う場合(個人 Mac 向け):
+AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS Code を開く Claude Code フックを使う場合(Homebrew がある場合):
 
 ```bash
 brew install --cask nikitabobko/tap/aerospace visual-studio-code
@@ -150,6 +150,23 @@ cp config/pi/extensions/open-mention.ts ~/.pi/agent/extensions/   # Pi を使う
 ```
 
 フックの登録(Claude Code / Codex)、各エージェントへの指示、アクセシビリティ権限は [aerospace.md](./aerospace.md) を参照する。VS Code はブラウザからではなく Homebrew で入れる(理由は同じく aerospace.md の「既知の注意点」)。
+
+管理者権限のない Mac(トラック B)では、Homebrew の代わりに `curl` で落として `~/Applications` に置く。
+
+```bash
+cd "$(mktemp -d)"
+curl -fsSL -o a.zip https://github.com/nikitabobko/AeroSpace/releases/download/v0.21.3-Beta/AeroSpace-v0.21.3-Beta.zip
+shasum -a 256 a.zip   # bdbd3fedb3a41bdd3987d241dd5cc1d8b74a56fdbc0d76a98e6925c5cfef4ce4 と一致すること
+ditto -x -k a.zip .
+mkdir -p ~/Applications ~/.local/bin
+ditto AeroSpace-*/AeroSpace.app ~/Applications/AeroSpace.app
+cp AeroSpace-*/bin/aerospace ~/.local/bin/
+cp ~/path/to/workenv_setting/config/aerospace/aerospace.toml ~/.aerospace.toml   # このリポの場所に合わせる
+open ~/Applications/AeroSpace.app
+```
+
+- 会社支給の Mac では、入れる前に情シスに確認する。判断材料は [aerospace.md](./aerospace.md) の「安全性」にまとめてある
+- 何に管理者権限が要るか、SSL エラーやブロックが出たときの対処も aerospace.md の「管理者権限のない Mac」を参照する
 
 ## 手順 3: デフォルトアプリの変更(任意)
 
