@@ -208,6 +208,46 @@ herdr --machine LABEL COMMAND
 herdr machine --help
 ```
 
+## キーバインド
+
+ルールは 1 つ。**Option = herdr(ターミナルの中)、Ctrl+Option = AeroSpace(ウィンドウ同士)**。prefix(Ctrl+B を押してから文字)を使わずに、1 回の操作で動く。prefix の既定キーもそのまま使える。
+
+`~/.config/herdr/config.toml` の末尾に `[keys]` を追加した(2026-10-09、変更前のバックアップは `config.toml.backup-20261009-keys`):
+
+```toml
+[keys]
+switch_tab = "alt+1..9"
+new_tab = "alt+n"
+new_workspace = "alt+shift+n"
+previous_workspace = "alt+["
+next_workspace = "alt+]"
+workspace_picker = "alt+w"
+focus_pane_left = "alt+shift+left"
+focus_pane_down = "alt+shift+down"
+focus_pane_up = "alt+shift+up"
+focus_pane_right = "alt+shift+right"
+split_vertical = "alt+v"
+split_horizontal = "alt+minus"
+zoom = "alt+z"
+close_pane = "alt+x"
+```
+
+| 操作 | キー |
+|:--|:--|
+| タブ 1〜9 へ移動 / 新しいタブ | Option+1〜9 / Option+N |
+| 新しいワークスペース | Option+Shift+N |
+| 前 / 次のワークスペース | Option+[ / Option+] |
+| ワークスペースを一覧から選ぶ | Option+W |
+| 隣のペインへ移動 | Option+Shift+矢印 |
+| 左右に分割 / 上下に分割 | Option+V / Option+- |
+| ペインを最大化(もう一度で戻る) | Option+Z |
+| ペインを閉じる | Option+X |
+
+- Option が herdr に届くのは、Ghostty の設定 `macos-option-as-alt = true` のおかげ([ghostty.md](./ghostty.md))
+- Option+矢印と Option+B / F / D は使っていない。シェルが「単語単位でカーソル移動・削除」に使うため
+- 変更後は `herdr config check` で検証し、`herdr server reload-config` で反映する
+- カスタムキーを全部消して既定に戻すには `herdr config reset-keys`(config.toml は自動でバックアップされる)
+
 ## トラブルシューティング
 
 ### 設定の変更が反映されない
