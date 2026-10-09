@@ -1,60 +1,60 @@
-# Shell and terminal
+# シェルとターミナル
 
-Captured on 2026-09-21 from macOS 26.6.2 on Apple Silicon.
+2026-09-21 に Apple Silicon の macOS 26.6.2 から取得した。
 
-## Shell
+## シェル
 
-- Shell: `/bin/zsh`
-- Version: zsh 5.9
-- Interactive config: `~/.zshrc`
-- Login config: `~/.zprofile`
+- シェル: `/bin/zsh`
+- バージョン: zsh 5.9
+- 対話シェル用の設定: `~/.zshrc`
+- ログインシェル用の設定: `~/.zprofile`
 
-`~/.zprofile` initializes:
+`~/.zprofile` で初期化しているもの:
 
-- Python 3.10 framework path
-- Homebrew through `/opt/homebrew/bin/brew shellenv`
-- OrbStack shell integration
-- Kiro CLI pre and post startup scripts
+- Python 3.10 フレームワークのパス
+- `/opt/homebrew/bin/brew shellenv` による Homebrew
+- OrbStack のシェル連携
+- Kiro CLI の起動前・起動後スクリプト
 
-`~/.zshrc` initializes:
+`~/.zshrc` で初期化しているもの:
 
-- Kiro CLI pre and post startup scripts
-- Kiro terminal integration when `TERM_PROGRAM=kiro`
-- Starship prompt
-- Flutter, Turso, Antigravity, LM Studio, and `~/.local/bin` paths
+- Kiro CLI の起動前・起動後スクリプト
+- `TERM_PROGRAM=kiro` のときの Kiro ターミナル連携
+- Starship プロンプト
+- Flutter・Turso・Antigravity・LM Studio・`~/.local/bin` のパス
 
-No shell aliases or custom shell functions are currently declared directly in these two files.
+現時点では、この 2 つのファイルにシェルのエイリアスや独自のシェル関数は直接定義していない。
 
-## Multiplexers and sessions
+## マルチプレクサとセッション
 
 ### tmux
 
-- Version: `3.7c`
-- Config: `~/.config/tmux/tmux.conf`
-- Prefix: `Ctrl+a`
-- Mouse: enabled
-- History limit: 50,000 lines
-- Vi copy-mode keys: enabled
-- Windows and panes start at index 1
-- Windows are automatically renumbered
-- True color and focus events are enabled
+- バージョン: `3.7c`
+- 設定: `~/.config/tmux/tmux.conf`
+- プレフィックス: `Ctrl+a`
+- マウス: 有効
+- 履歴の上限: 50,000 行
+- コピーモードの vi キー: 有効
+- ウィンドウとペインの番号は 1 から始まる
+- ウィンドウ番号は自動で振り直される
+- True Color とフォーカスイベントを有効化
 
-Keybindings after the prefix:
+プレフィックスの後のキーバインド:
 
-- `r`: reload config
-- `|`: horizontal split in the current path
-- `-`: vertical split in the current path
-- `c`: new window in the current path
-- `h`, `j`, `k`, `l`: navigate panes
-- `H`, `J`, `K`, `L`: resize panes by five cells
-- `z`: toggle pane zoom
-- `A`: create the three-pane `agent | editor | manual` crew layout
+- `r`: 設定を再読み込み
+- `|`: 現在のパスで左右に分割
+- `-`: 現在のパスで上下に分割
+- `c`: 現在のパスで新しいウィンドウ
+- `h`、`j`、`k`、`l`: ペイン間を移動
+- `H`、`J`、`K`、`L`: ペインのサイズを 5 セルずつ変更
+- `z`: ペインの最大化を切り替え
+- `A`: `agent | editor | manual` の 3 ペイン構成(crew レイアウト)を作成
 
-The status bar uses a Rose Pine Moon inspired palette and shows the session, windows, date, and time.
+ステータスバーは Rose Pine Moon 風の配色で、セッション・ウィンドウ・日付・時刻を表示する。
 
 ### Herdr
 
-Herdr is the higher-level persistent workspace manager. See [herdr.md](./herdr.md).
+Herdr は tmux より上のレベルの永続ワークスペース管理ツール。[herdr.md](./herdr.md) を参照。
 
 ## コマンド入力支援(2026-09-26 追加)
 
@@ -70,44 +70,44 @@ source <(fzf --zsh)
 - zsh-autosuggestions(brew, 2026-09-26 導入): コマンドを打ち始めると過去の履歴から続きが灰色で表示される。→キーで確定、無視してそのまま打ち続けてもよい
 - fzf シェル連携: `Ctrl+R` でコマンド履歴のあいまい検索(一部だけ打てば候補が絞られる)、`Ctrl+T` でファイルパスを入力中のコマンドに挿入、`Alt+C` でフォルダを選んで移動
 
-## Prompt
+## プロンプト
 
-- Starship version: `1.26.0`
-- Initialized by `eval "$(starship init zsh)"`
-- No `~/.config/starship.toml` exists, so Starship currently uses its default configuration.
+- Starship のバージョン: `1.26.0`
+- `eval "$(starship init zsh)"` で初期化
+- `~/.config/starship.toml` は存在しないので、Starship は現在デフォルト設定で動いている。
 
-## Environment variables
+## 環境変数
 
-The shell defines `SAKANA_API_KEY`. Its value is intentionally not recorded.
+シェルで `SAKANA_API_KEY` を定義している。値は意図的に記録していない。
 
-Configured path additions:
+追加しているパス:
 
 - `/Library/Frameworks/Python.framework/Versions/3.10/bin`
-- `/opt/homebrew/bin` and related Homebrew paths
+- `/opt/homebrew/bin` と関連する Homebrew のパス
 - `~/dev/flutter/bin`
 - `~/.turso`
 - `~/.antigravity/antigravity/bin`
 - `~/.lmstudio/bin`
 - `~/.local/bin`
 
-Never add secret values to this repository.
+秘密の値は絶対にこのリポジトリに追加しないこと。
 
-## Troubleshooting
+## トラブルシューティング
 
-### Reload zsh settings
+### zsh の設定を再読み込みする
 
 ```bash
 exec zsh
 ```
 
-### Reload tmux settings
+### tmux の設定を再読み込みする
 
 ```bash
 tmux source-file ~/.config/tmux/tmux.conf
 ```
 
-Inside tmux, use prefix then `r`.
+tmux の中では、プレフィックスの後に `r` を押す。
 
-### Important zsh scripting note
+### zsh スクリプトを書くときの重要な注意
 
-Do not use `path` as a local loop or scalar variable in zsh. It is tied to the `PATH` array and can temporarily make commands unavailable. Use a specific name such as `config_file` instead.
+zsh では `path` をループ変数やスカラー変数として使わないこと。`path` は `PATH` 配列と連動しているため、一時的にコマンドが使えなくなることがある。代わりに `config_file` のような具体的な名前を使う。

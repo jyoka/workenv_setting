@@ -1,17 +1,17 @@
 # Glow
 
-## Purpose
+## 目的
 
-Render and browse Markdown files in the terminal. The TUI is useful for navigating this settings directory.
+ターミナルで Markdown ファイルを整形表示・閲覧する。TUI はこの設定ディレクトリの中を見て回るのに便利。
 
-## Installation
+## インストール
 
-- Binary: `/opt/homebrew/bin/glow`
-- Homebrew package: `glow 3.0.0`
+- 実行ファイル: `/opt/homebrew/bin/glow`
+- Homebrew パッケージ: `glow 3.0.0`
 
-## Configuration
+## 設定
 
-Config file: `~/Library/Preferences/glow/glow.yml`
+設定ファイル: `~/Library/Preferences/glow/glow.yml`
 
 ```yaml
 style: "auto"
@@ -21,36 +21,36 @@ width: 80
 all: false
 ```
 
-This means Glow follows the terminal theme, disables mouse input and automatic paging, wraps at 80 columns, and hides hidden or ignored files.
+この設定では、Glow はターミナルのテーマに合わせて表示し、マウス入力と自動ページャーを無効にし、80 桁で折り返し、隠しファイルや無視対象のファイルを表示しない。
 
-## Commands and workflows
+## コマンドと使い方
 
-Open the current directory in the interactive file browser:
+現在のディレクトリを対話型のファイルブラウザで開く:
 
 ```bash
 glow --tui .
 ```
 
-Open a specific Markdown file:
+特定の Markdown ファイルを開く:
 
 ```bash
 glow README.md
 ```
 
-Useful TUI keys:
+TUI で便利なキー:
 
-- `r`: refresh the directory listing
-- `/`: find
-- `Enter`: open the selected document
-- `e`: edit the selected document
-- `q`: quit or return to the previous view
+- `r`: ディレクトリ一覧を再読み込み
+- `/`: 検索
+- `Enter`: 選択中のドキュメントを開く
+- `e`: 選択中のドキュメントを編集
+- `q`: 終了、または前の画面に戻る
 
-## Troubleshooting
+## トラブルシューティング
 
-### A newly created Markdown file does not appear
+### 新しく作った Markdown ファイルが表示されない
 
-The Glow TUI may still be showing its previous directory listing. Press `r` to refresh. This was verified with Glow 3.0.0.
+Glow の TUI が以前のディレクトリ一覧を表示したままになっていることがある。`r` を押して再読み込みする。Glow 3.0.0 で確認済み。
 
-## References
+## 参考
 
 - <https://github.com/charmbracelet/glow>

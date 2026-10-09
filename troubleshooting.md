@@ -1,25 +1,25 @@
-# Troubleshooting
+# トラブルシューティング
 
-Use this file for issues that affect multiple terminal or agent tools.
+複数のターミナルツールやエージェントツールにまたがる問題を記録するファイル。
 
-## Entry template
+## 記入テンプレート
 
-### Problem
+### 問題
 
-<!-- Exact symptom and error message. -->
+<!-- 症状とエラーメッセージを正確に。 -->
 
-### Environment
+### 環境
 
-<!-- OS, shell, terminal, tool version, and relevant context. -->
+<!-- OS、シェル、ターミナル、ツールのバージョン、関連する状況。 -->
 
-### Cause
+### 原因
 
-<!-- Confirmed root cause. -->
+<!-- 確認できた根本原因。 -->
 
-### Fix
+### 対処
 
-<!-- Commands or configuration changes that resolved the issue. -->
+<!-- 問題を解決したコマンドや設定変更。 -->
 
-### Verification
+### 確認方法
 
-<!-- How the fix was tested. -->
+<!-- 対処が効いたことをどう確かめたか。 -->

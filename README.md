@@ -1,66 +1,66 @@
 # workenv_setting
 
-Terminal tools, agent workflows, and local development settings captured from this Mac on 2026-09-21. (旧リポ名: workagent_setting。2026-09-26 に改名)
+2026-09-21 時点のこの Mac から取り出した、ターミナルツール・エージェントのワークフロー・ローカル開発環境の設定。(旧リポ名: workagent_setting。2026-09-26 に改名)
 
 ## 別の Mac に環境を再現する
 
 **[新しい Mac でのセットアップ手順](./setup-new-mac.md)** を参照。設定ファイルの実物(マスター)は [`config/`](./config/) に入っている。Homebrew が使えない、管理者権限のない Mac(会社支給など)向けの手順も含む。
 
-## Contents
+## 目次
 
 - [Yazi](./yazi.md)
 - [Herdr](./herdr.md)
 - [Glow](./glow.md)
 - [Ghostty](./ghostty.md)
 - [WezTerm](./wezterm.md)
-- [Shell and terminal](./shell-terminal.md)
-- [Agent tools](./agent-tools.md)
-- [Troubleshooting](./troubleshooting.md)
+- [シェルとターミナル](./shell-terminal.md)
+- [エージェントツール](./agent-tools.md)
+- [トラブルシューティング](./troubleshooting.md)
 
-## Documentation convention
+## 記録のルール
 
-For each tool, record:
+ツールごとに次の項目を記録する:
 
-1. Purpose and common use cases
-2. Installation method and version
-3. Configuration file locations
-4. Important commands and shortcuts
-5. Integrations with other tools
-6. Known issues and fixes
-7. Links to official documentation
+1. 目的とよくある使い方
+2. インストール方法とバージョン
+3. 設定ファイルの場所
+4. 重要なコマンドとショートカット
+5. 他のツールとの連携
+6. 既知の問題と対処法
+7. 公式ドキュメントへのリンク
 
-Do not store API keys, access tokens, passwords, or other secrets in this directory.
+API キー・アクセストークン・パスワードなどの秘密情報は、このディレクトリに置かないこと。
 
-## Environment snapshot
+## 環境のスナップショット
 
-- macOS 26.6.2, build 25G83
-- Apple Silicon (`arm64`)
-- Login shell: zsh 5.9
-- Primary recorded terminal: Ghostty 1.3.1
-- Alternative terminal: WezTerm 20240203-110809-5046fc22
-- Multiplexer: tmux 3.7c
+- macOS 26.6.2、ビルド 25G83
+- Apple Silicon(`arm64`)
+- ログインシェル: zsh 5.9
+- 主に記録したターミナル: Ghostty 1.3.1
+- 代替ターミナル: WezTerm 20240203-110809-5046fc22
+- マルチプレクサ: tmux 3.7c
 
-## How the stack fits together
+## ツールの組み合わせ方
 
-| Layer | Tool | What it does |
+| 層 | ツール | 役割 |
 |:--|:--|:--|
-| Terminal window | Ghostty or WezTerm | Draws the terminal window, text, colors, tabs, and terminal-level panes |
-| Shell | zsh | Reads and runs the commands you type |
-| Prompt | Starship | Builds the information shown before each command, such as the current folder, Git state, runtime, and previous command status |
-| Multiplexer | tmux | Keeps shell sessions alive and organizes terminal windows and panes |
-| Agent workspace | Herdr | Manages persistent workspaces, agents, panes, remotes, and handoffs at a higher level than tmux |
-| Markdown viewer | Glow | Renders and browses Markdown in the terminal |
-| Coding agents | Codex, Claude Code, Kiro | Inspect and change projects using terminal workflows |
-| Editor | Neovim | Edits text and code inside the terminal |
+| ターミナルウィンドウ | Ghostty または WezTerm | ターミナルのウィンドウ・文字・色・タブ・ターミナル単位のペインを描画する |
+| シェル | zsh | 入力したコマンドを読み取って実行する |
+| プロンプト | Starship | 各コマンドの前に表示する情報(現在のフォルダ、Git の状態、ランタイム、直前のコマンドの結果など)を組み立てる |
+| マルチプレクサ | tmux | シェルのセッションを維持し、ターミナルのウィンドウとペインを整理する |
+| エージェント用ワークスペース | Herdr | 永続ワークスペース・エージェント・ペイン・リモート・引き継ぎ(ハンドオフ)を tmux より上のレベルで管理する |
+| Markdown ビューア | Glow | ターミナルで Markdown を整形表示・閲覧する |
+| コーディングエージェント | Codex、Claude Code、Kiro | ターミナル上のワークフローでプロジェクトを調べ、変更する |
+| エディタ | Neovim | ターミナル内でテキストやコードを編集する |
 
-### Starship in this setup
+### この構成での Starship
 
-Starship is only the prompt renderer. It does not replace zsh, Ghostty, tmux, or Herdr. The following line in `~/.zshrc` asks zsh to generate its prompt with Starship:
+Starship はプロンプトを描画するだけのツールで、zsh・Ghostty・tmux・Herdr の代わりにはならない。`~/.zshrc` の次の行で、zsh のプロンプトを Starship に生成させている:
 
 ```zsh
 eval "$(starship init zsh)"
 ```
 
-Starship 1.26.0 is installed. No `~/.config/starship.toml` exists, so it currently uses the default appearance and modules. Removing the initialization line would return zsh to a basic prompt without uninstalling or changing the other terminal tools.
+Starship 1.26.0 をインストール済み。`~/.config/starship.toml` は存在しないので、現在は標準の見た目とモジュールで動いている。この初期化行を消せば zsh は素のプロンプトに戻り、他のターミナルツールのアンインストールや変更は発生しない。
 
-Official documentation: <https://starship.rs/>
+公式ドキュメント: <https://starship.rs/>

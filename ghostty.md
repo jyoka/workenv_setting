@@ -1,62 +1,62 @@
 # Ghostty
 
-## Purpose
+## 目的
 
-Primary terminal configuration optimized for long AI-agent reviews, readable text, and Herdr or tmux pane workflows.
+メインのターミナル設定。AI エージェントの出力を長時間レビューすること、文字の読みやすさ、Herdr や tmux のペインを使ったワークフローに合わせて調整している。
 
-## Installation
+## インストール
 
-- Application: `/Applications/Ghostty.app`
+- アプリ: `/Applications/Ghostty.app`
 - Homebrew cask: `ghostty 1.3.1`
-- Channel: stable
-- Architecture: Apple Silicon
+- チャンネル: stable
+- アーキテクチャ: Apple Silicon
 
-## Configuration
+## 設定
 
-Config file: `~/.config/ghostty/config`
+設定ファイル: `~/.config/ghostty/config`
 
-### Typography
+### 文字
 
-- Font: `JetBrainsMono Nerd Font`
-- Font size: `14`
-- Cell height adjustment: `20%`
-- Font thickening: enabled
-- Minimum contrast: `1.3`
+- フォント: `JetBrainsMono Nerd Font`
+- フォントサイズ: `14`
+- セルの高さ調整: `20%`
+- 文字の太らせ(font-thicken): 有効
+- 最低コントラスト: `1.3`
 
-### Theme and appearance
+### テーマと見た目
 
-- Light theme: `Catppuccin Latte`
-- Dark theme: `Catppuccin Mocha`
-- Horizontal padding: `12`
-- Vertical padding: `8`
-- Balanced padding: enabled
-- Background opacity: `0.95`
-- Background blur radius: `20`
-- macOS titlebar style: tabs
-- Unfocused split opacity: `0.85`
+- ライトテーマ: `Catppuccin Latte`
+- ダークテーマ: `Catppuccin Mocha`
+- 左右の余白: `12`
+- 上下の余白: `8`
+- 余白の均等化: 有効
+- 背景の不透明度: `0.95`
+- 背景のぼかし半径: `20`
+- macOS のタイトルバー形式: tabs
+- フォーカスされていない分割ペインの不透明度: `0.85`
 
-### Input and cursor
+### 入力とカーソル
 
-- Cursor style: block
-- Hide mouse while typing: enabled
-- Treat macOS Option as Alt: enabled
+- カーソルの形: ブロック
+- 入力中はマウスカーソルを隠す: 有効
+- macOS の Option キーを Alt として扱う: 有効
 
-Reload the config with `Cmd+Shift+,` or restart Ghostty.
+設定の再読み込みは `Cmd+Shift+,`、または Ghostty の再起動で行う。
 
-## Keybindings
+## キーバインド
 
-No custom keybindings are currently declared in the Ghostty config. `Cmd+Shift+,` reloads the configuration.
+現在の Ghostty 設定では独自のキーバインドを定義していない。`Cmd+Shift+,` で設定を再読み込みできる。
 
-## Troubleshooting
+## トラブルシューティング
 
-### Nerd Font icons are missing
+### Nerd Font のアイコンが表示されない
 
-Confirm that `JetBrainsMono Nerd Font` is installed and that the font name matches the configured family exactly.
+`JetBrainsMono Nerd Font` がインストールされていること、フォント名が設定のフォントファミリー名と完全に一致していることを確認する。
 
-### Text is too faint in Herdr or another TUI
+### Herdr などの TUI で文字が薄くて読みにくい
 
-The current config uses `minimum-contrast = 1.3` and `font-thicken = true`. Increase minimum contrast if faint text remains difficult to read.
+現在の設定は `minimum-contrast = 1.3` と `font-thicken = true` を使っている。それでも薄くて読みにくければ、最低コントラストの値を上げる。
 
-## References
+## 参考
 
 - <https://ghostty.org/docs>

@@ -1,8 +1,8 @@
-# Agent tools
+# エージェントツール
 
-## Tools
+## ツール一覧
 
-| Tool | Version | Binary |
+| ツール | バージョン | 実行ファイル |
 |:--|:--|:--|
 | Codex CLI | `0.144.6` | `/opt/homebrew/bin/codex` |
 | Claude Code | `2.1.278` | `~/.local/bin/claude` |
@@ -10,38 +10,38 @@
 | Herdr | `0.9.1` | `/opt/homebrew/bin/herdr` |
 | Neovim | `0.12.4` | `/opt/homebrew/bin/nvim` |
 
-Gemini CLI was not found on `PATH` during the 2026-09-21 inventory.
+2026-09-21 の棚卸し時点では、Gemini CLI は `PATH` 上に見つからなかった。
 
-## Shared instructions
+## 共通の指示ファイル
 
-Kiro installs pre and post startup blocks in both `~/.zprofile` and `~/.zshrc`. Its terminal-specific zsh integration is loaded only when `TERM_PROGRAM` is `kiro`.
+Kiro は `~/.zprofile` と `~/.zshrc` の両方に起動前・起動後のブロックを追加する。Kiro のターミナル専用の zsh 連携は、`TERM_PROGRAM` が `kiro` のときだけ読み込まれる。
 
-Project-specific `AGENTS.md`, `CLAUDE.md`, skills, and hooks should be documented per repository because their scope and permissions differ. Do not copy credentials or machine-specific secret values into those files.
+プロジェクト固有の `AGENTS.md`・`CLAUDE.md`・スキル・フックは、適用範囲や権限がそれぞれ違うため、リポジトリごとに記録する。これらのファイルに認証情報やマシン固有の秘密の値をコピーしないこと。
 
-## Workflows
+## ワークフロー
 
-The current terminal stack is designed around:
+現在のターミナル構成は次の組み合わせを前提にしている:
 
-1. Ghostty or WezTerm as the terminal emulator
-2. Herdr for persistent AI-agent workspaces
-3. tmux for explicit pane and window layouts
-4. zsh with Starship for the interactive shell
-5. Codex, Claude Code, or Kiro as the coding agent
-6. Glow for Markdown browsing
-7. Neovim as the terminal editor
+1. ターミナルエミュレータとして Ghostty または WezTerm
+2. AI エージェントの永続ワークスペースとして Herdr
+3. ペインとウィンドウのレイアウトを明示的に組むための tmux
+4. 対話シェルとして zsh + Starship
+5. コーディングエージェントとして Codex・Claude Code・Kiro のいずれか
+6. Markdown の閲覧に Glow
+7. ターミナルエディタとして Neovim
 
-Task-oriented agent work (task board that runs Claude Code, Codex, Pi, or Kiro locally, one herdr workspace per task) lives in its own repo: `~/AIprogramming PJ/task-hub` (`task` CLI, `/task` skill), https://github.com/jyoka/task-hub. See its README.
+タスク単位のエージェント作業(Claude Code・Codex・Pi・Kiro をローカルで動かすタスクボード。タスクごとに herdr のワークスペースを 1 つ使う)は別リポジトリにある: `~/AIprogramming PJ/task-hub`(`task` CLI、`/task` スキル)、https://github.com/jyoka/task-hub 。詳しくはその README を参照。
 
-## Permissions and safety
+## 権限と安全
 
-- Keep API keys and tokens in environment variables or approved secret stores.
-- Document variable names only, never values.
-- Review logs before copying them because they may contain project paths or command arguments.
-- Keep project-specific permissions in that project's agent instruction files.
+- API キーやトークンは環境変数か、承認済みのシークレットストアに置く。
+- 記録するのは変数名だけにし、値は絶対に書かない。
+- ログにはプロジェクトのパスやコマンド引数が含まれることがあるので、コピーする前に中身を確認する。
+- プロジェクト固有の権限設定は、そのプロジェクトのエージェント向け指示ファイルに置く。
 
-## Troubleshooting
+## トラブルシューティング
 
-### Confirm installed versions
+### インストール済みのバージョンを確認する
 
 ```bash
 codex --version
@@ -51,6 +51,6 @@ herdr --version
 nvim --version
 ```
 
-### Agent command is not found
+### エージェントのコマンドが見つからない
 
-Start a new zsh session with `exec zsh`, then confirm that Homebrew and `~/.local/bin` are present in `PATH`.
+`exec zsh` で新しい zsh セッションを開始し、`PATH` に Homebrew と `~/.local/bin` が含まれていることを確認する。
