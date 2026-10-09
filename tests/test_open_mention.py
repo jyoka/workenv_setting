@@ -1,4 +1,6 @@
 import importlib.util
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -44,6 +46,18 @@ class FindTargetsTests(unittest.TestCase):
     def test_plain_or_empty_prompt_is_a_normal_prompt(self):
         self.assertIsNone(self.find("hello"))
         self.assertIsNone(self.find("   "))
+
+    def test_bare_paths_accept_plain_paths_like_codex_inserts(self):
+        targets = MENTION.find_targets('a.md "dir with space/b.md"', str(self.cwd), bare_paths=True)
+        self.assertEqual([p for p, _ in targets], [str(self.cwd / "a.md"), str(self.cwd / "dir with space" / "b.md")])
+
+    def test_bare_paths_still_pass_normal_prompts_through(self):
+        self.assertIsNone(MENTION.find_targets("fix a.md please", str(self.cwd), bare_paths=True))
+        self.assertIsNone(MENTION.find_targets("hello", str(self.cwd), bare_paths=True))
+
+    def test_cli_mode_exit_code_tells_pi_whether_it_opened(self):
+        no_match = subprocess.run([sys.executable, str(SCRIPT_PATH), "--prompt", "hello", "--cwd", str(self.cwd)], capture_output=True, text=True)
+        self.assertEqual((no_match.returncode, no_match.stdout), (1, ""))
 
 
 if __name__ == "__main__":

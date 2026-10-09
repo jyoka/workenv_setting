@@ -144,11 +144,12 @@ AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS C
 ```bash
 brew install --cask nikitabobko/tap/aerospace visual-studio-code
 cp config/aerospace/aerospace.toml ~/.aerospace.toml
-mkdir -p ~/.claude/hooks
-cp scripts/open_mention.py ~/.claude/hooks/
+mkdir -p ~/.config/agent-hooks ~/.pi/agent/extensions
+cp scripts/open_mention.py ~/.config/agent-hooks/
+cp config/pi/extensions/open-mention.ts ~/.pi/agent/extensions/   # Pi を使う場合
 ```
 
-フックの登録(`~/.claude/settings.json`)とアクセシビリティ権限は [aerospace.md](./aerospace.md) を参照する。VS Code はブラウザからではなく Homebrew で入れる(理由は同じく aerospace.md の「既知の注意点」)。
+フックの登録(Claude Code / Codex)、各エージェントへの指示、アクセシビリティ権限は [aerospace.md](./aerospace.md) を参照する。VS Code はブラウザからではなく Homebrew で入れる(理由は同じく aerospace.md の「既知の注意点」)。
 
 ## 手順 3: デフォルトアプリの変更(任意)
 

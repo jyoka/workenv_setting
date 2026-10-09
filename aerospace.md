@@ -73,9 +73,16 @@ VSC="/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
 git show HEAD:path/to/file > /tmp/file.orig && "$VSC" -r --diff /tmp/file.orig path/to/file
 ```
 
-Claude Code にはこの指示を `~/.claude/CLAUDE.md` に書いてある。Codex など他のエージェントでも使うなら、それぞれの指示ファイル(例: `~/.codex/AGENTS.md`)に同じ内容を足す。
+この指示(「頼まれたら VS Code で開く」)を書いてある場所:
 
-### @ だけで開く(Claude Code)
+| エージェント | 指示ファイル |
+|:--|:--|
+| Claude Code | `~/.claude/CLAUDE.md` |
+| Codex | `~/.codex/AGENTS.md` |
+| Pi | `~/.pi/agent/AGENTS.md` |
+| Kiro CLI | `~/.kiro/agents/coder.json` の `prompt`(既定エージェントが `coder` のため) |
+
+### @ だけで開く
 
 入力欄で `@` を打ってファイルを選び、**他に何も書かずに** Enter を押すと、VS Code で開く。プロンプトはモデルに送られないので、待ち時間もトークン消費もない。
 
@@ -87,19 +94,34 @@ Claude Code にはこの指示を `~/.claude/CLAUDE.md` に書いてある。Cod
 | `@a.md @b.md` だけ | 両方開く |
 | `@README.md これを説明して` | 普通のプロンプトとして送る(開かない) |
 
-仕組み: Claude Code の `UserPromptSubmit` フック(Enter を押したときに走るスクリプト)。
+判定のロジックは 1 本のスクリプトにまとめ、各エージェントから呼ぶ。直すときはこのスクリプトだけ直せばよい。
 
 - スクリプトのマスター: [`scripts/open_mention.py`](./scripts/open_mention.py)
-- 実際に動く場所: `~/.claude/hooks/open_mention.py`
-- 登録先: `~/.claude/settings.json` の `hooks.UserPromptSubmit`。既存の `hooks` があれば、その中に足す:
-
-  ```json
-  "UserPromptSubmit": [
-    { "hooks": [{ "type": "command", "command": "python3 ~/.claude/hooks/open_mention.py", "timeout": 10 }] }
-  ]
-  ```
-
+- 実際に動く場所: `~/.config/agent-hooks/open_mention.py`
 - 存在しないパスが混じっていたら、何もせず普通のプロンプトとして送る
+
+| エージェント | 仕組み | 登録先 | 状態 |
+|:--|:--|:--|:--|
+| Claude Code | `UserPromptSubmit` フック | `~/.claude/settings.json` | 動作確認済み |
+| Codex | `UserPromptSubmit` フック(`--bare-paths` 付き) | `~/.codex/hooks.json` | 初回に `/hooks` で承認が必要。実機の Enter は未確認 |
+| Pi | 拡張の `input` イベント | `~/.pi/agent/extensions/open-mention.ts`(マスター: [`config/pi/extensions/open-mention.ts`](./config/pi/extensions/open-mention.ts)) | 実機の Enter は未確認 |
+| Kiro CLI | なし | - | 2.x のフックはプロンプトを止められない(モデルに送られてしまう)ため入れていない。3.0 では止められるとドキュメントにある |
+
+登録の中身(既存の `hooks` があれば、その中に足す):
+
+```json
+// ~/.claude/settings.json の "hooks" の中
+"UserPromptSubmit": [
+  { "hooks": [{ "type": "command", "command": "python3 ~/.config/agent-hooks/open_mention.py", "timeout": 10 }] }
+]
+
+// ~/.codex/hooks.json の "hooks" の中
+"UserPromptSubmit": [
+  { "hooks": [{ "type": "command", "command": "python3 ~/.config/agent-hooks/open_mention.py --bare-paths", "timeout": 10 }] }
+]
+```
+
+Codex だけ `--bare-paths` を付ける理由: Codex の `@` ピッカーはファイルを選ぶと `@` を消してパスだけを入れる。そのため「存在するパスだけのプロンプト」も開く対象にしている。副作用として、存在するファイル名 1 語だけを送ると、質問ではなく「開く」になる。
 
 ## 既知の注意点
 
