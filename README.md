@@ -8,6 +8,7 @@
 
 ## 目次
 
+- [AeroSpace](./aerospace.md)
 - [Yazi](./yazi.md)
 - [Herdr](./herdr.md)
 - [Glow](./glow.md)
@@ -52,6 +53,8 @@ API キー・アクセストークン・パスワードなどの秘密情報は�
 | Markdown ビューア | Glow | ターミナルで Markdown を整形表示・閲覧する |
 | コーディングエージェント | Codex、Claude Code、Kiro | ターミナル上のワークフローでプロジェクトを調べ、変更する |
 | エディタ | Neovim | ターミナル内でテキストやコードを編集する |
+| ウィンドウマネージャー | AeroSpace | アプリのウィンドウを重ならないよう横に並べる。操作はすべて Ctrl+Option |
+| レビュー用ビューア | VS Code | 頼まれたときに、ファイルや変更差分をターミナルの横に開く |
 
 ### この構成での Starship
 

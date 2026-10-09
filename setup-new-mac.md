@@ -139,6 +139,17 @@ cp scripts/herdr_status.py ~/.config/herdr/scripts/
 
 herdr の `config.toml`(タブバー・サイドバー設定)は [herdr.md](./herdr.md) を参照して反映する。
 
+AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS Code を開く Claude Code フックを使う場合(個人 Mac 向け):
+
+```bash
+brew install --cask nikitabobko/tap/aerospace visual-studio-code
+cp config/aerospace/aerospace.toml ~/.aerospace.toml
+mkdir -p ~/.claude/hooks
+cp scripts/open_mention.py ~/.claude/hooks/
+```
+
+フックの登録(`~/.claude/settings.json`)とアクセシビリティ権限は [aerospace.md](./aerospace.md) を参照する。VS Code はブラウザからではなく Homebrew で入れる(理由は同じく aerospace.md の「既知の注意点」)。
+
 ## 手順 3: デフォルトアプリの変更(任意)
 
 Office ライセンスがない Mac では、pptx / xlsx / docx をダブルクリックしたとき LibreOffice が開くようにする。
