@@ -4,6 +4,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 
 SCRIPT_PATH = Path(__file__).parents[1] / "scripts" / "open_mention.py"
@@ -58,6 +59,17 @@ class FindTargetsTests(unittest.TestCase):
     def test_cli_mode_exit_code_tells_pi_whether_it_opened(self):
         no_match = subprocess.run([sys.executable, str(SCRIPT_PATH), "--prompt", "hello", "--cwd", str(self.cwd)], capture_output=True, text=True)
         self.assertEqual((no_match.returncode, no_match.stdout), (1, ""))
+
+
+class VSCodePathTests(unittest.TestCase):
+    def test_falls_back_to_home_applications_without_admin_install(self):
+        home_code = str(Path.home() / "Applications" / MENTION.VSCODE_BIN)
+        with mock.patch.object(MENTION.os.path, "exists", lambda p: p == home_code):
+            self.assertEqual(MENTION.vscode_path(), home_code)
+
+    def test_prefers_system_applications(self):
+        with mock.patch.object(MENTION.os.path, "exists", lambda p: True):
+            self.assertEqual(MENTION.vscode_path(), "/Applications/" + MENTION.VSCODE_BIN)
 
 
 if __name__ == "__main__":
