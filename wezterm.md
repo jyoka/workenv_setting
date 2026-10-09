@@ -1,71 +1,71 @@
 # WezTerm
 
-## Purpose
+## 目的
 
-Alternative cross-platform terminal emulator with a Lua configuration and automatic config reload. The configuration deliberately keeps terminal keybindings minimal because tmux is the primary multiplexer.
+Lua で設定でき、設定を自動で再読み込みする、クロスプラットフォームの代替ターミナルエミュレータ。メインのマルチプレクサは tmux なので、ターミナル側のキーバインドはあえて最小限にしている。
 
-## Installation
+## インストール
 
-- Binary: `/opt/homebrew/bin/wezterm`
-- Version: `20240203-110809-5046fc22`
+- 実行ファイル: `/opt/homebrew/bin/wezterm`
+- バージョン: `20240203-110809-5046fc22`
 
-## Configuration
+## 設定
 
-Config file: `~/.config/wezterm/wezterm.lua`
+設定ファイル: `~/.config/wezterm/wezterm.lua`
 
-### Appearance
+### 見た目
 
-- Color scheme: `Rose Pine Moon`
-- Font fallback: `JetBrains Mono`, then `Menlo`
-- Font size: `14.0`
-- Line height: `1.05`
-- Background opacity: `0.97`
-- macOS background blur: `20`
-- Window decorations: resize border only
-- Padding: left 8, right 8, top 8, bottom 4
-- Hide the tab bar when only one tab exists
-- Simple tab bar at the bottom
-- Do not resize the window when font size changes
+- カラースキーム: `Rose Pine Moon`
+- フォント: `JetBrains Mono`、なければ `Menlo`
+- フォントサイズ: `14.0`
+- 行の高さ: `1.05`
+- 背景の不透明度: `0.97`
+- macOS の背景ぼかし: `20`
+- ウィンドウ装飾: リサイズ用の枠のみ
+- 余白: 左 8、右 8、上 8、下 4
+- タブが 1 つだけのときはタブバーを隠す
+- シンプルなタブバーを下部に表示
+- フォントサイズを変えてもウィンドウサイズは変えない
 
-### Behavior
+### 動作
 
-- Scrollback: 10,000 lines
-- Audible bell: disabled
-- Automatic config reload: enabled
-- Cursor: blinking bar
+- スクロールバック: 10,000 行
+- ベル音: 無効
+- 設定の自動再読み込み: 有効
+- カーソル: 点滅する縦棒
 
-## Keybindings
+## キーバインド
 
-Leader: `Cmd+a`, with a one-second timeout.
+リーダーキー: `Cmd+a`(タイムアウト 1 秒)。
 
-After the leader:
+リーダーキーの後に:
 
-- `Shift+|`: horizontal split
-- `-`: vertical split
-- `h`, `j`, `k`, `l`: navigate panes
-- `z`: toggle pane zoom
-- `c`: create a tab
+- `Shift+|`: 左右に分割
+- `-`: 上下に分割
+- `h`、`j`、`k`、`l`: ペイン間を移動
+- `z`: ペインの最大化を切り替え
+- `c`: タブを作成
 
-## Relationship with tmux
+## tmux との関係
 
-tmux is the primary multiplexer. WezTerm's leader and pane bindings are retained for sessions that run without tmux. Keep future WezTerm bindings minimal to avoid conflicts with the tmux `Ctrl+a` prefix.
+メインのマルチプレクサは tmux。WezTerm のリーダーキーとペイン操作のキーバインドは、tmux を使わないセッション用に残している。tmux のプレフィックス `Ctrl+a` とぶつからないよう、今後も WezTerm のキーバインドは最小限にとどめる。
 
-## iPad usage
+## iPad での利用
 
-WezTerm does not provide a native iPadOS application. Its officially supported desktop platforms are macOS, Linux, Windows, FreeBSD, and NetBSD.
+WezTerm にはネイティブの iPadOS アプリがない。公式にサポートされているデスクトップ環境は macOS・Linux・Windows・FreeBSD・NetBSD。
 
-Use an iPad SSH client such as Blink Shell or Termius to connect to the Mac, then attach to the persistent environment there:
+iPad からは Blink Shell や Termius などの SSH クライアントで Mac に接続し、Mac 側の永続環境にアタッチする:
 
 ```bash
 ssh USER@MAC_HOST
 herdr
-# or
+# または
 tmux attach
 ```
 
-The WezTerm Lua configuration applies only when running WezTerm on a supported desktop system. It does not transfer to the iPad SSH application.
+WezTerm の Lua 設定は、サポート対象のデスクトップ環境で WezTerm を動かしたときにだけ適用される。iPad の SSH アプリには引き継がれない。
 
-## References
+## 参考
 
 - <https://wezfurlong.org/wezterm/>
 - <https://wezterm.org/features.html>
