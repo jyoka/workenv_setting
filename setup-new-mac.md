@@ -11,6 +11,7 @@
 | yazi 26.x 以上 | ファイルマネージャー本体 | 必須 |
 | glow | md の閲覧・プレビュー | 必須 |
 | micro | エディタ(Ctrl+S 保存 / Ctrl+Q 終了) | 必須 |
+| Neovim 0.11 以上 + ripgrep | メインのエディタ(LSP・自動整形・Git 表示つき)。ripgrep は文字列検索に使う | 推奨 |
 | fzf | Ctrl+R 履歴検索など | 推奨 |
 | zsh-autosuggestions | コマンド自動補完 | 推奨 |
 | LibreOffice | pptx / xlsx / docx のプレビューと閲覧 | office 機能を使うなら必須 |
@@ -29,6 +30,23 @@ brew install yazi glow micro fzf poppler zsh-autosuggestions node
 brew install --cask libreoffice
 npm install -g live-server
 ```
+
+Neovim を使う場合:
+
+```bash
+brew install neovim ripgrep
+brew install zig   # Zig を書く場合。node は上で入れている
+```
+
+Neovim は初回起動時に、Mason が言語サーバーとフォーマッタを自動で入れる。そのために次のものが必要:
+
+| 必要なもの | 使う道具 |
+|:--|:--|
+| Node.js / npm | pyright、ts_ls、prettier |
+| zig | zls と `zig fmt` |
+| git、curl、unzip | lazy.nvim の `git clone` と、Mason のダウンロード・展開。curl と unzip は macOS に最初から入っている。git は Xcode Command Line Tools に含まれる |
+
+Python・TypeScript・Zig を書かないなら、その言語の道具は入らなくても Neovim 自体は動く。詳細は [nvim.md](./nvim.md)。
 
 ### トラック B: 管理者権限のない Mac(会社支給など、Homebrew が使えない場合)
 
@@ -67,6 +85,32 @@ mkdir -p ~/.local/bin ~/Applications
 
 5. **LibreOffice**(office 機能を使う場合)。<https://www.libreoffice.org/download/> から dmg を取得し、**`~/Applications` にドラッグ**する(/Applications と違い管理者権限不要)。初回起動時に Gatekeeper の確認が出たら許可する。yazi のプラグインは `~/Applications/LibreOffice.app` を自動で見つける
 6. **pdftoppm**(PDF・スライドのプレビュー用)。poppler は Homebrew なしでの入手が難しいため、代わりに Xpdf command line tools(<https://www.xpdfreader.com/download.html>)の `pdftoppm` を `~/.local/bin/` に置き、隔離属性を外す。入手できなければ、スライドプレビューだけ諦めれば他の機能はすべて動く
+7. **Neovim + ripgrep**(Neovim を使う場合)。公式の GitHub Releases の tar.gz を `~/.local` に展開し、`~/.local/bin` からリンクを張る。Neovim は `bin/` と `share/` がそろって動くので、フォルダごと置く:
+
+   ```bash
+   cd "$(mktemp -d)"
+   # Neovim: https://github.com/neovim/neovim/releases (Intel Mac は nvim-macos-x86_64)
+   curl -fLO https://github.com/neovim/neovim/releases/latest/download/nvim-macos-arm64.tar.gz
+   tar xzf nvim-macos-arm64.tar.gz
+   rm -rf ~/.local/nvim-macos-arm64
+   mv nvim-macos-arm64 ~/.local/
+   ln -sf ~/.local/nvim-macos-arm64/bin/nvim ~/.local/bin/nvim
+
+   # ripgrep: 最新のバージョンは https://github.com/BurntSushi/ripgrep/releases で確認する
+   RG=15.2.0
+   curl -fLO https://github.com/BurntSushi/ripgrep/releases/download/$RG/ripgrep-$RG-aarch64-apple-darwin.tar.gz
+   tar xzf ripgrep-$RG-aarch64-apple-darwin.tar.gz
+   cp ripgrep-$RG-aarch64-apple-darwin/rg ~/.local/bin/
+   ```
+
+   ブラウザでダウンロードした場合は、2. と同じく隔離属性を外す。Neovim はフォルダごと外す:
+
+   ```bash
+   xattr -dr com.apple.quarantine ~/.local/nvim-macos-arm64
+   xattr -d com.apple.quarantine ~/.local/bin/rg
+   ```
+
+   Mason が入れる道具には Node.js / npm(4. の手順)と zig も要る。zig は <https://ziglang.org/download/> の macOS 用 tar.xz を `~/.local` に展開し、`zig` を PATH に通す。Zig を書かないなら不要。詳細は [nvim.md](./nvim.md)
 
 トラック B の注意: 端末管理(MDM)の設定によっては、隔離解除やダウンロードしたバイナリの実行自体をポリシーでブロックしている場合がある。その場合は端末の管理者に「開発ツールとして許可してほしい」と相談するしかない。また、会社支給の Microsoft Office ライセンスがあるなら、デフォルトアプリの変更(後述)は不要。
 
@@ -116,6 +160,10 @@ curl -k -LO <URL>
 
 `git config --global http.sslVerify false` のような**恒久的なオフ設定は残さない**こと。戻し忘れの確認は `git config --global --get http.sslVerify` と `npm config get strict-ssl`。
 
+#### Neovim の初回起動も通信する
+
+Neovim は初回起動時に、lazy.nvim がプラグインを `git clone` し、Mason が言語サーバーとフォーマッタを(curl と npm で)ダウンロードする。このためセキュリティソフトがある環境では、上と同じ SSL エラーで失敗する。先に上の「正攻法」の設定をしてから Neovim を起動する。失敗した後に設定した場合は、Neovim を開き直して `:Lazy sync` と `:Mason` で入り直す。
+
 ## 手順 2: 設定ファイルをコピーする
 
 このリポを取得して、`config/` の中身を所定の場所へコピーする:
@@ -138,6 +186,22 @@ cp scripts/herdr_status.py ~/.config/herdr/scripts/
 ```
 
 herdr の `config.toml`(タブバー・サイドバー設定)は [herdr.md](./herdr.md) を参照して反映する。
+
+Neovim を使う場合:
+
+**既存の `~/.config/nvim` がある場合は、先にバックアップする。** `cp` で `init.lua` が上書きされ、元の設定が消えるため:
+
+```bash
+[ -e ~/.config/nvim ] && mv ~/.config/nvim ~/.config/nvim.bak
+```
+
+```bash
+mkdir -p ~/.config/nvim && cp config/nvim/init.lua ~/.config/nvim/
+```
+
+この `init.lua` はコピー。編集するときは `jyoka/agentic_learning` の `config/nvim/init.lua`(マスター)を変える([nvim.md](./nvim.md))。
+
+初回の `nvim` 起動時に、lazy.nvim がプラグインを `git clone` し、Mason が言語サーバーとフォーマッタをダウンロードする。数分かかることがあり、進み具合は `:Lazy` と `:Mason` で見られる。通信を検査するセキュリティソフトがある環境では失敗するので、先に [SSL エラー対策](#通信を検査するセキュリティソフトがある環境での-ssl-エラー対策) をしておく。
 
 AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS Code を開く Claude Code フックを使う場合(Homebrew がある場合):
 
@@ -187,5 +251,6 @@ Office ライセンスがない Mac では、pptx / xlsx / docx をダブルク�
 - [ ] pptx: カーソルでスライド画像プレビュー
 - [ ] html: カーソルでレンダリング画像、Enter で live-server 起動(Ctrl+C で終了)
 - [ ] `Ctrl+P` で Quick Look が開く
+- [ ] `nvim` がエラーなしで起動し、`:checkhealth` に ERROR がない(lazy の luarocks の ERROR は無視してよい。[nvim.md](./nvim.md) の既知の問題)。`:Mason` で pyright・ts_ls(typescript-language-server)・lua_ls(lua-language-server)・zls が入っている
 
-うまくいかないときは [yazi.md](./yazi.md) と [troubleshooting.md](./troubleshooting.md) を参照。
+うまくいかないときは [yazi.md](./yazi.md)、[nvim.md](./nvim.md)、[troubleshooting.md](./troubleshooting.md) を参照。

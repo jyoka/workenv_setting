@@ -14,6 +14,7 @@
 - [Glow](./glow.md)
 - [Ghostty](./ghostty.md)
 - [WezTerm](./wezterm.md)
+- [Neovim](./nvim.md)
 - [シェルとターミナル](./shell-terminal.md)
 - [エージェントツール](./agent-tools.md)
 - [トラブルシューティング](./troubleshooting.md)
