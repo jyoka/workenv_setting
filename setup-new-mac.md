@@ -201,7 +201,7 @@ mkdir -p ~/.config/nvim && cp config/nvim/init.lua ~/.config/nvim/
 
 この `init.lua` はコピー。編集するときは `jyoka/agentic_learning` の `config/nvim/init.lua`(マスター)を変える([nvim.md](./nvim.md))。
 
-初回の `nvim` 起動時に、lazy.nvim がプラグインを `git clone` し、Mason が言語サーバーとフォーマッタをダウンロードする。数分かかることがあり、進み具合は `:Lazy` と `:Mason` で見られる。通信を検査するセキュリティソフトがある環境では失敗するので、先に [SSL エラー対策](#通信を検査するセキュリティソフトがある環境での-ssl-エラー対策) をしておく。
+初回の `nvim` 起動時に、lazy.nvim がプラグインを `git clone` し、Mason が言語サーバーとフォーマッタをダウンロードする。数分かかることがあり、進み具合は `:Lazy` と `:Mason` で見られる。通信を検査するセキュリティソフトがある環境では失敗するので、先に [SSL エラー対策](#通信を検査するセキュリティソフトがある環境での-ssl-エラー対策) をしておく。途中で `Press ENTER` が何度も出たら、Enter を押し続ける(押さないとインストールが止まる。[nvim.md](./nvim.md#初回起動でpress-enterが何度も出てインストールが止まる) 参照)。
 
 AeroSpace(タイル型ウィンドウマネージャー)と、`@` だけで VS Code を開く Claude Code フックを使う場合(Homebrew がある場合):
 
