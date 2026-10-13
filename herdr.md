@@ -248,6 +248,34 @@ close_pane = "alt+x"
 - 変更後は `herdr config check` で検証し、`herdr server reload-config` で反映する
 - カスタムキーを全部消して既定に戻すには `herdr config reset-keys`(config.toml は自動でバックアップされる)
 
+### Linux(Omarchy)での違い
+
+Linux 機(Omarchy)の `~/.config/herdr/config.toml` は Omarchy の tmux 設定を写したもので、prefix は `Ctrl+Space`。その上に上の Mac 用 Option キーを追加して、同じ指で動くようにした(2026-10-13)。既存キーは消さず、配列で並べている:
+
+```toml
+[keys]
+prefix = "ctrl+space"
+split_horizontal = ["prefix+h", "alt+enter", "alt+minus"]
+split_vertical = ["prefix+v", "alt+shift+enter", "alt+v"]
+close_pane = ["prefix+x", "alt+esc", "alt+x"]
+zoom = ["prefix+z", "alt+z"]
+focus_pane_left = ["ctrl+alt+left", "alt+shift+left"]   # down / up / right も同様
+switch_tab = ["prefix+1..9", "alt+1..9"]
+new_tab = ["prefix+c", "alt+n"]
+new_workspace = ["prefix+shift+c", "alt+shift+n"]
+previous_workspace = ["prefix+shift+p", "alt+up", "alt+["]
+next_workspace = ["prefix+shift+n", "alt+down", "alt+]"]
+workspace_picker = "alt+w"
+# alt+shift+左右 をペイン移動に使うため、タブの並べ替えは prefix に移した
+move_tab_previous = "prefix+shift+left"
+move_tab_next = "prefix+shift+right"
+```
+
+- Linux には Option キーがない。**Alt キーが Mac の Option の代わり**になる
+- Logitech K380 では、**`alt / cmd` と書かれたキーが Alt**。`start / option` のキーは Linux では Super(Omarchy のキー)になり、Option+V のつもりで押すと Hyprland の「Universal paste」(Super+V)が動く
+- Ghostty の Linux 既定キーが Alt+1〜9 と Ctrl+Alt+矢印を横取りするので、Ghostty 側で外している([ghostty.md](./ghostty.md#linuxomarchy))
+- Linux 側だけのキー: タブを左右に並べ替える = `Ctrl+Space` → `Shift+←/→`
+
 ## トラブルシューティング
 
 ### 設定の変更が反映されない
@@ -257,6 +285,14 @@ close_pane = "alt+x"
 ```bash
 herdr server reload-config
 ```
+
+`config.toml` を書き換えただけでは動いているセッションに反映されない。`herdr config check` で検証してから上のコマンドを実行するか、herdr の中で `prefix` → `q` を押す。
+
+### Linux で Option(Alt)キーが効かない
+
+- K380 なら `start / option` ではなく `alt / cmd` のキーを押す(上の「Linux(Omarchy)での違い」を参照)
+- `alt / cmd` でも効かないときは、K380 が Mac モードになっている可能性がある。Fn+P を 1 秒押して Windows / Linux モードに切り替える
+- どのキーが何を送っているかは `wev` を起動してキーを押すと分かる
 
 ### ログを確認する
 
