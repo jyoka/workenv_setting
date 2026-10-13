@@ -167,6 +167,7 @@ LSP は Python・TypeScript/JavaScript・Lua・Zig のファイルを開くと�
 
 - tmux の crew レイアウト(プレフィックス + `A`)は `agent | editor | manual` の 3 ペイン。editor ペインで Neovim を開く([shell-terminal.md](./shell-terminal.md))
 - 色は WezTerm・tmux と同じ Rose Pine Moon でそろえている
+- Omarchy の全テーマの Neovim 用設定(lazy.nvim の spec)を [`config/nvim/themes/`](./config/nvim/themes/) に置いている。`scripts/export_omarchy_themes.sh` が Ghostty のテーマと一緒に作る([ghostty.md](./ghostty.md#omarchy-のテーマを使う))。各ファイルはテーマのプラグインと、`LazyVim/LazyVim` の `opts.colorscheme`(色テーマ名)を返す。LazyVim は使っていないので、使うときはプラグインの部分だけ取り出して `vim.cmd.colorscheme('<名前>')` を呼ぶ。`init.lua` に組み込むなら、マスターの `jyoka/agentic_learning` 側で行う
 - tmux はプレフィックスに `Ctrl+a` を使う。tmux の中では `Ctrl+a` が tmux に取られるため、Neovim の「数字を 1 増やす」(`Ctrl+a`)は届かない
 - herdr のショートカットは Option キー、AeroSpace は Ctrl+Option([herdr.md](./herdr.md))。この設定は Option(Alt)キーを使わないので、どちらともぶつからない
 

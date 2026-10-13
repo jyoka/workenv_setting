@@ -29,10 +29,17 @@ AI コーディングエージェント向けのターミナルワークスペ�
 onboarding = false
 
 [theme]
-name = "nord"
+# Ghostty の色(Retro 82)をそのまま使う
+name = "terminal"
 auto_switch = false
 
+[theme.custom]
+# アクティブなタブは「panel_bg の文字色 + アクセント色の背景」で描かれるので、panel_bg は暗い色にする
+panel_bg = "black"
+
 [ui]
+# ターミナルの青(Retro 82 では #3f8f8a)をアクセントに使う
+accent = "blue"
 tab_bar_right = [
   { type = "command", command = "python3 '/Users/<user>/.config/herdr/scripts/herdr_status.py'", interval_seconds = 10, timeout_seconds = 5 },
   { type = "hostname" },
