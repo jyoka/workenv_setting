@@ -44,14 +44,13 @@ vim.opt.rtp:prepend(lazypath)
 
 -- ── Plugins ─────────────────────────────────────────────────
 require('lazy').setup({
-  -- Rose Pine Moon theme
+  -- Retro 82 theme (Omarchy's retro-82). Specs for every Omarchy theme live in
+  -- jyoka/workenv_setting config/nvim/themes/ if you want another one.
   {
-    'rose-pine/neovim',
-    name = 'rose-pine',
+    'OldJobobo/retro-82.nvim',
     priority = 1000,
     config = function()
-      require('rose-pine').setup({ variant = 'moon' })
-      vim.cmd.colorscheme('rose-pine')
+      vim.cmd.colorscheme('retro-82')
     end,
   },
 

@@ -61,7 +61,7 @@ gh api -H "Accept: application/vnd.github.raw" \
 | プラグイン | 役割 |
 |:--|:--|
 | lazy.nvim | プラグイン管理。初回起動時に自分自身を `git clone` する |
-| rose-pine(moon) | 色テーマ。WezTerm・tmux と同じ Rose Pine Moon |
+| retro-82.nvim | 色テーマ。Omarchy の Retro 82 と同じ色(Ghostty・herdr もそろえられる) |
 | telescope.nvim | ファイル・文字列・バッファのあいまい検索 |
 | nvim-treesitter | 構文の色分け |
 | mason.nvim + mason-lspconfig + nvim-lspconfig | LSP: pyright、ts_ls、lua_ls、zls |
@@ -166,7 +166,8 @@ LSP は Python・TypeScript/JavaScript・Lua・Zig のファイルを開くと�
 ### tmux / herdr
 
 - tmux の crew レイアウト(プレフィックス + `A`)は `agent | editor | manual` の 3 ペイン。editor ペインで Neovim を開く([shell-terminal.md](./shell-terminal.md))
-- 色は WezTerm・tmux と同じ Rose Pine Moon でそろえている
+- 色は Omarchy の Retro 82。Ghostty でも同じテーマを選べる([ghostty.md](./ghostty.md#omarchy-のテーマを使う))
+- Omarchy の全テーマの Neovim 用設定(lazy.nvim の spec)を [`config/nvim/themes/`](./config/nvim/themes/) に置いている。`scripts/export_omarchy_themes.sh` が Ghostty のテーマと一緒に作る([ghostty.md](./ghostty.md#omarchy-のテーマを使う))。各ファイルはテーマのプラグインと、`LazyVim/LazyVim` の `opts.colorscheme`(色テーマ名)を返す。LazyVim は使っていないので、別のテーマにするときは `init.lua` の Retro 82 の部分を、そのファイルのプラグインと `vim.cmd.colorscheme('<名前>')` に置き換える(マスターの `jyoka/agentic_learning` 側で)
 - tmux はプレフィックスに `Ctrl+a` を使う。tmux の中では `Ctrl+a` が tmux に取られるため、Neovim の「数字を 1 増やす」(`Ctrl+a`)は届かない
 - herdr のショートカットは Option キー、AeroSpace は Ctrl+Option([herdr.md](./herdr.md))。この設定は Option(Alt)キーを使わないので、どちらともぶつからない
 
