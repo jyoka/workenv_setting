@@ -77,6 +77,30 @@ Omarchy 自身のテンプレート処理(`omarchy-theme-set-templates`)を一�
 
 現在の Ghostty 設定では独自のキーバインドを定義していない。`Cmd+Shift+,` で設定を再読み込みできる。
 
+### Linux(Omarchy)
+
+Linux 版 Ghostty は、Mac では Cmd に割り当てているタブ・分割の操作を Alt / Ctrl+Alt に割り当てている。そのままだと herdr のキーが Ghostty に横取りされるので、`~/.config/ghostty/config` で外した(2026-10-13):
+
+```
+# Ghostty's Linux defaults grab these for its own tabs/splits; hand them to herdr instead.
+keybind = ctrl+alt+arrow_up=unbind
+keybind = ctrl+alt+arrow_down=unbind
+keybind = ctrl+alt+arrow_left=unbind
+keybind = ctrl+alt+arrow_right=unbind
+keybind = alt+digit_1=unbind
+keybind = alt+1=unbind
+# … alt+digit_8 / alt+8 まで同様
+keybind = alt+9=unbind
+```
+
+| Ghostty の既定キー | 動作 | herdr での用途 |
+|:--|:--|:--|
+| Alt+1〜8 / Alt+9 | Ghostty のタブ移動 / 最後のタブ | タブ 1〜9 へ移動 |
+| Ctrl+Alt+矢印 | Ghostty の分割間を移動 | 隣のペインへ移動 |
+
+- 既定キーの一覧は `ghostty +list-keybinds --default`、外せたかは `ghostty +list-keybinds` で確認する
+- 変更後は `ghostty +validate-config` で検証し、Omarchy なら `omarchy restart terminal` で反映する
+
 ## トラブルシューティング
 
 ### Nerd Font のアイコンが表示されない
