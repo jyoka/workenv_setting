@@ -15,7 +15,7 @@ Lua で設定でき、設定を自動で再読み込みする、クロスプラ�
 
 ### 見た目
 
-- カラースキーム: `Rose Pine Moon`
+- カラースキーム: `Retro 82`(Omarchy の retro-82 と同じ色。WezTerm の標準スキームにないので `color_schemes` で定義)
 - フォント: `JetBrains Mono`、なければ `Menlo`
 - フォントサイズ: `14.0`
 - 行の高さ: `1.05`
