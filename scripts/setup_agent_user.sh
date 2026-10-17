@@ -14,7 +14,11 @@
 # user's HOME to get there. Every command is safe to run again; rerunning the install also
 # repairs permissions that drifted. Names, paths and the agent's git identity can be overridden:
 #   sudo AGENT_USER=task-agent AGENT_GIT_EMAIL=me@example.com scripts/setup_agent_user.sh
-set -euo pipefail
+set -eEuo pipefail
+# A failing command outside a condition ends the script; say where, so it never exits silently.
+# -E makes functions and subshells inherit the trap. Commands where "no match" is a normal
+# outcome (grep, pgrep, find) must stay in a condition or end in `|| true`.
+trap 'rc=$?; printf "==> ERROR: line %s (%s): %s exited %s\n" "$LINENO" "${FUNCNAME[0]:-main}" "$BASH_COMMAND" "$rc" >&2' ERR
 
 AGENT_USER="${AGENT_USER:-task-agent}"
 AGENT_GROUP="${AGENT_GROUP:-task-agents}"
@@ -104,13 +108,15 @@ step_user() {
   fi
   local u
   for u in "$OWNER" "$AGENT_USER"; do
-    if ! id -nG "$u" | tr ' ' '\n' | grep -qx "$AGENT_GROUP"; then
+    # grep without -q reads all input, so tr never gets SIGPIPE and fails the pipeline.
+    if ! id -nG "$u" | tr ' ' '\n' | grep -x "$AGENT_GROUP" >/dev/null; then
       gpasswd -a "$u" "$AGENT_GROUP" >/dev/null
       say "added $u to $AGENT_GROUP"
     fi
   done
   local extra
-  extra="$(id -nG "$AGENT_USER" | tr ' ' '\n' | grep -vx -e "$AGENT_USER" -e "$AGENT_GROUP" | tr '\n' ' ')"
+  # No extra groups is the normal case, and then grep -v selects nothing and exits 1.
+  extra="$(id -nG "$AGENT_USER" | tr ' ' '\n' | { grep -vx -e "$AGENT_USER" -e "$AGENT_GROUP" || true; } | tr '\n' ' ')"
   [[ -z $extra ]] || warn "$AGENT_USER is in extra groups ($extra); wheel or docker would let it become root"
 }
 
@@ -386,7 +392,7 @@ step_check() {
     fi
   fi
   local g
-  g="$(find "$DATA/repos" -mindepth 1 -maxdepth 4 -name .git -type d -print -quit 2>/dev/null)"
+  g="$(find "$DATA/repos" -mindepth 1 -maxdepth 4 -name .git -type d -print -quit 2>/dev/null || true)"
   if [[ -n $g ]]; then
     # Committing writes objects, refs and the worktree's index under the main .git.
     if as_agent test -w "$g/objects" && as_agent test -w "$g/refs/heads"; then
