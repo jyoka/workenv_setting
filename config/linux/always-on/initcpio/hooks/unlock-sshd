@@ -1,0 +1,17 @@
+#!/usr/bin/ash
+
+run_hook() {
+    [ -d /dev/pts ] || mkdir -p /dev/pts
+    mount -t devpts devpts /dev/pts
+
+    msg ":: Starting dropbear on port 2222 for remote unlock"
+    dropbear -E -s -j -k -p 2222 -r /etc/dropbear/dropbear_ed25519_host_key -P /run/dropbear.pid
+}
+
+run_cleanuphook() {
+    if [ -f /run/dropbear.pid ]; then
+        kill "$(cat /run/dropbear.pid)"
+    fi
+    umount /dev/pts
+    rm -rf /dev/pts
+}

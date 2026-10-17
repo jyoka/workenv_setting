@@ -1,0 +1,37 @@
+#!/bin/bash
+# Dropbear in the initramfs for remote LUKS unlock (always-on.md). Pairs with netconf and encryptssh.
+# Unlike mkinitcpio-dropbear, this never copies the OpenSSH host keys: the image sits unencrypted
+# on the ESP, so it carries its own host key from /etc/dropbear-initramfs instead.
+
+build() {
+    local dir=/etc/dropbear-initramfs
+
+    if [[ ! -s $dir/authorized_keys || ! -s $dir/dropbear_ed25519_host_key ]]; then
+        error "unlock-sshd: $dir/authorized_keys or the host key is missing (run scripts/setup_always_on.sh initramfs)"
+        return 1
+    fi
+
+    add_checked_modules '/drivers/net/'
+    add_binary dropbear
+    # encryptssh's cryptsetup_shell runs `killall --quiet`, which busybox's killall lacks
+    add_binary killall
+    add_binary rm
+    add_file /usr/lib/libnss_files.so.2
+
+    add_file "$dir/dropbear_ed25519_host_key" /etc/dropbear/dropbear_ed25519_host_key 600
+    add_dir /root 700
+    add_dir /root/.ssh 700
+    add_file "$dir/authorized_keys" /root/.ssh/authorized_keys 600
+    add_dir /var/log
+    touch "$BUILDROOT/var/log/lastlog"
+
+    add_runscript
+}
+
+help() {
+    cat <<HELPEOF
+Starts dropbear on port 2222 in early userspace, key-only, without port forwarding.
+Put it after netconf and before encryptssh. Host key and authorized_keys come from
+/etc/dropbear-initramfs.
+HELPEOF
+}
