@@ -18,6 +18,7 @@
 - [シェルとターミナル](./shell-terminal.md)
 - [エージェントツール](./agent-tools.md)
 - [常時稼働マシン(Linux)](./always-on.md)
+- [GitHub Actions のセルフホストランナー(Linux)](./actions-runner.md)
 - [トラブルシューティング](./troubleshooting.md)
 
 ## 記録のルール

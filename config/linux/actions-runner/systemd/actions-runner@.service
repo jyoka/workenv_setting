@@ -1,0 +1,46 @@
+# One self-hosted GitHub Actions runner per repository (see actions-runner.md).
+# Instance name: <owner>__<repo>, the runner's directory under /var/lib/github-runner/runners.
+# Installed to /etc/systemd/system/ by scripts/setup_actions_runner.sh.
+[Unit]
+Description=GitHub Actions runner (%i)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=github-runner
+Group=github-runner
+WorkingDirectory=/var/lib/github-runner/runners/%i
+# runsvc.sh is the runner's own service wrapper (copied from bin/ at setup); it restarts
+# the listener after the runner updates itself.
+ExecStart=/var/lib/github-runner/runners/%i/runsvc.sh
+# SIGTERM to the wrapper only (it lets the running job finish), then kill what is left.
+KillMode=mixed
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+Restart=always
+RestartSec=30
+
+# Resource limits: the shared ci.slice caps CPU and memory for all runners together.
+Slice=ci.slice
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+OOMScoreAdjust=500
+
+# Sandbox: jobs run PR code. /home, /root and /run/user are invisible, the rest of the
+# system is read-only except the runner's own home, and nothing can gain privileges.
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/github-runner
+PrivateTmp=yes
+NoNewPrivileges=yes
+RestrictSUIDSGID=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+LockPersonality=yes
+
+[Install]
+WantedBy=multi-user.target
