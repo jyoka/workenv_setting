@@ -1,0 +1,17 @@
+# CI jobs from the self-hosted GitHub Actions runners (see actions-runner.md).
+# A top-level slice, a sibling of user.slice (desktop, task-hub-watch) and system.slice.
+# Installed to /etc/systemd/system/ci.slice by scripts/setup_actions_runner.sh.
+[Unit]
+Description=Self-hosted GitHub Actions runners (CI jobs)
+
+[Slice]
+# Low share when the CPU is busy (default weight is 100), so task-hub and the desktop win.
+# The quota caps CI at 6 of the 12 threads even when the machine is idle.
+CPUWeight=20
+CPUQuota=600%
+# Reclaim memory from CI first above 6 GiB; kill CI jobs (never the desktop) above 8 GiB.
+MemoryHigh=6G
+MemoryMax=8G
+MemorySwapMax=2G
+IOWeight=20
+TasksMax=4096
