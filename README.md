@@ -20,6 +20,7 @@
 - [常時稼働マシン(Linux)](./always-on.md)
 - [iPhone からのリモートデスクトップ(Linux)](./remote-desktop.md)
 - [GitHub Actions のセルフホストランナー(Linux)](./actions-runner.md)
+- [task-hub エージェント専用ユーザー(Linux)](./agent-user.md)
 - [トラブルシューティング](./troubleshooting.md)
 
 ## 記録のルール
