@@ -3,15 +3,17 @@
 # Run on the Omarchy machine from the repo root, with sudo, as the task-hub user (joka):
 #
 #   sudo scripts/setup_agent_user.sh            # create/repair the user, group, sudoers and ACLs
+#   sudo scripts/setup_agent_user.sh token      # give the agent its GitHub token (read from stdin)
 #   sudo scripts/setup_agent_user.sh status     # show what is in place, change nothing
 #   sudo scripts/setup_agent_user.sh check      # run the acceptance checks (sudo, worktree, home)
 #   sudo scripts/setup_agent_user.sh uninstall  # undo everything: ACLs, sudoers, group, user
 #
 # The agent user can be reached from the task-hub user only (sudo -u task-agent, never root),
-# shares a group and default ACLs with it on task-hub's worktrees, can read (not write) the
-# repos the worktrees belong to, and can only pass through the task-hub user's HOME to get there. Every command is safe to run again; rerunning
-# the install also repairs permissions that drifted. Names and paths can be overridden:
-#   sudo AGENT_USER=task-agent AGENT_GROUP=task-agents scripts/setup_agent_user.sh
+# shares a group and default ACLs with it on task-hub's worktrees and repos, runs git (commit,
+# push) there under its own identity and GitHub token, and can only pass through the task-hub
+# user's HOME to get there. Every command is safe to run again; rerunning the install also
+# repairs permissions that drifted. Names, paths and the agent's git identity can be overridden:
+#   sudo AGENT_USER=task-agent AGENT_GIT_EMAIL=me@example.com scripts/setup_agent_user.sh
 set -euo pipefail
 
 AGENT_USER="${AGENT_USER:-task-agent}"
@@ -43,12 +45,12 @@ setup_vars() {
   OWNER_HOME="$(getent passwd "$OWNER" | cut -d: -f6)"
   OWNER_GROUP="$(id -gn "$OWNER")"
   DATA="${TASKHUB_DATA:-$OWNER_HOME/.local/share/task-hub}"
-  # The agent edits files in its worktree (read/write, shared group). Git in a worktree also
-  # reads the main repository's .git under repos/, but the agent must not write there: a hook or
-  # a .git/config entry (core.hooksPath, core.fsmonitor) would run as the task-hub user during
-  # task-hub's own git steps. So repos/ is read-only for the agent.
-  SHARED=("$DATA/worktrees")
-  READONLY=("$DATA/repos")
+  # The agent edits its worktree and commits and pushes by itself, so it writes the worktree
+  # and the git data under repos/ (objects, refs, the worktree's gitdir). Everything there is
+  # then under the agent's control: the task-hub user must not run git in either place (see
+  # agent-user.md "セキュリティ"); task-hub runs those git steps as the agent.
+  SHARED=("$DATA/worktrees" "$DATA/repos")
+  GH=/usr/bin/gh
 }
 
 # Directories from the HOME down to DATA that the agent has to pass through (execute only).
@@ -77,7 +79,7 @@ side_entries() {
       [[ ${e##*/} != . && ${e##*/} != .. ]] || continue
       [[ $e != "$next" ]] || continue
       keep=0
-      for s in "${SHARED[@]}" "${READONLY[@]}"; do [[ $e != "$s" ]] || keep=1; done
+      for s in "${SHARED[@]}"; do [[ $e != "$s" ]] || keep=1; done
       ((keep)) || echo "$e"
     done
   done
@@ -136,25 +138,45 @@ EOF
   visudo -cq || die "sudoers configuration is invalid after writing $SUDOERS; fix it with visudo"
 }
 
+# Cut the agent off from the shared directories before root walks them. find hands paths to
+# chgrp/chmod/setfacl, which follow symlinks, so an agent process could otherwise swap a
+# directory there for a symlink to /etc between the two and have root grant it rw on, say,
+# /etc/shadow. Its only way in is through $DATA (not agent-writable), where a named-user entry
+# of --- overrides group and other; processes already inside are refused (install) or killed
+# (uninstall). If the script stops halfway the agent simply stays cut off until the next run.
+freeze_agent() {
+  [[ ! -d $DATA ]] || setfacl -m "u:$AGENT_USER:---" "$DATA"
+  local i
+  for ((i = 0; i < 20; i++)); do
+    pgrep -u "$AGENT_USER" >/dev/null || return 0
+    if [[ $1 != kill ]]; then
+      setfacl -m "u:$AGENT_USER:--x" "$DATA"
+      pgrep -a -u "$AGENT_USER" >&2 || true
+      die "processes run as $AGENT_USER (above); stop the task-hub tasks (or sudo pkill -u $AGENT_USER) and rerun"
+    fi
+    pkill -KILL -u "$AGENT_USER" || true
+    sleep 0.5
+  done
+  die "could not stop the processes of $AGENT_USER"
+}
+
 step_acls() {
   local d spec="u:$OWNER:rwX,u:$AGENT_USER:rwX,g:$AGENT_GROUP:rwX"
   for d in "${SHARED[@]}"; do
     [[ -d $d ]] || install -d -m755 -o "$OWNER" -g "$OWNER_GROUP" "$d"
+  done
+  freeze_agent refuse
+  for d in "${SHARED[@]}"; do
     # Group ownership and setgid so new files stay in the shared group; access ACLs on what
     # exists and default ACLs on directories so new files get them too. The named-user entries
     # work even before the task-hub user logs in again and picks up the new group.
-    find "$d" ! -type l ! -group "$AGENT_GROUP" -exec chgrp "$AGENT_GROUP" {} +
+    find "$d" ! -type l ! -group "$AGENT_GROUP" -exec chgrp -h "$AGENT_GROUP" {} +
     find "$d" -type d ! -perm -2000 -exec chmod g+s {} +
     find "$d" ! -type l -exec setfacl -m "$spec" {} +
     find "$d" -type d -exec setfacl -d -m "u::rwX,g::rwX,o::rX,$spec" {} +
     say "shared $d with $AGENT_GROUP"
   done
-  for d in "${READONLY[@]}"; do
-    [[ -d $d ]] || install -d -m755 -o "$OWNER" -g "$OWNER_GROUP" "$d"
-    find "$d" ! -type l -exec setfacl -m "u:$AGENT_USER:rX" {} +
-    find "$d" -type d -exec setfacl -d -m "u:$AGENT_USER:rX" {} +
-    say "$d: read-only for $AGENT_USER"
-  done
+  setfacl -m "u:$AGENT_USER:--x" "$DATA"
   local p
   while read -r p; do
     setfacl -m "u:$AGENT_USER:--x" "$p"
@@ -166,8 +188,9 @@ step_acls() {
 }
 
 step_git() {
-  # Worktrees and repos belong to the task-hub user; without this git refuses them as
-  # "dubious ownership" when the agent runs it.
+  # Worktrees and repos (mostly) belong to the task-hub user; without this git refuses them as
+  # "dubious ownership" when the agent runs it. This only matters to the agent's own git: it does
+  # not make the task-hub user's git safe to run there.
   local have p
   have="$(as_agent git config --global --get-all safe.directory || true)"
   for p in "$DATA/worktrees/*" "$DATA/repos/*"; do
@@ -176,8 +199,49 @@ step_git() {
       say "git: safe.directory $p for $AGENT_USER"
     fi
   done
-  as_agent git config --global user.email >/dev/null ||
-    warn "$AGENT_USER has no git identity yet (see agent-user.md)"
+  # The agent commits under this identity. Default: the task-hub user's own name and email, so
+  # commits look the same as before; set AGENT_GIT_NAME / AGENT_GIT_EMAIL to use another.
+  local key var val
+  for key in name email; do
+    var="AGENT_GIT_${key^^}"
+    val="${!var:-}"
+    [[ -n $val ]] || val="$(as_agent git config --global "user.$key" || as_owner git config --global "user.$key" || true)"
+    if [[ -z $val ]]; then
+      warn "no git user.$key for $AGENT_USER; rerun with $var=... (see agent-user.md)"
+    elif [[ $(as_agent git config --global "user.$key" || true) != "$val" ]]; then
+      as_agent git config --global "user.$key" "$val"
+      say "git: user.$key '$val' for $AGENT_USER"
+    fi
+  done
+  if [[ ! -x $GH ]]; then
+    pacman -S --needed --noconfirm github-cli
+  fi
+  as_agent "$GH" auth status &>/dev/null ||
+    warn "$AGENT_USER has no GitHub token yet: sudo $0 token < token.txt (see agent-user.md)"
+}
+
+# token: log the agent user in to GitHub with its own fine-grained token, read from stdin (never
+# an argument, so it does not show in `ps` or the shell history), and make git push with it.
+step_token() {
+  id "$AGENT_USER" &>/dev/null || die "user $AGENT_USER does not exist (run install first)"
+  [[ -x $GH ]] || pacman -S --needed --noconfirm github-cli
+  local token
+  if [[ -t 0 ]]; then
+    read -rsp "fine-grained GitHub token for $AGENT_USER: " token
+    echo
+  else
+    read -r token || true
+  fi
+  [[ $token =~ ^[A-Za-z0-9_]+$ ]] || die "no token given (or it has unexpected characters)"
+  [[ $token == github_pat_* ]] ||
+    warn "this is not a fine-grained token (github_pat_...); use one limited to the task repos"
+  as_agent "$GH" auth login --hostname github.com --git-protocol https --with-token <<<"$token" ||
+    die "gh auth login failed for $AGENT_USER"
+  unset token
+  # Adds gh as git's credential helper in the agent's ~/.gitconfig, for https remotes.
+  as_agent "$GH" auth setup-git --hostname github.com
+  as_agent "$GH" auth status --hostname github.com
+  say "$AGENT_USER pushes and calls the GitHub API with its own token"
 }
 
 print_values() {
@@ -188,7 +252,7 @@ task-hub settings:
   agent group  $AGENT_GROUP
   agent home   $AGENT_HOME
   shared dirs  ${SHARED[*]} (read/write)
-  read-only    ${READONLY[*]}
+  git identity $(as_agent git config --global user.name || echo none) <$(as_agent git config --global user.email || echo none)>
   run a command as the agent:  sudo -n -u $AGENT_USER -H -D <worktree> -- <command>
 
 Log out and in again (or reboot) so $OWNER's sessions and user services pick up the group.
@@ -222,16 +286,14 @@ step_status() {
       say "$d: not shared (run install)"
     fi
   done
-  for d in "${READONLY[@]}"; do
-    if getfacl -cp "$d" 2>/dev/null | grep -q "^default:user:$AGENT_USER:r-x"; then
-      say "$d: read-only for $AGENT_USER"
-    else
-      say "$d: not readable for $AGENT_USER (run install)"
-    fi
-  done
   id "$AGENT_USER" &>/dev/null || return 0
   leaks || true
   say "git identity of $AGENT_USER: $(as_agent git config --global user.email || echo none)"
+  if [[ -x $GH ]] && as_agent "$GH" auth status &>/dev/null; then
+    say "GitHub token of $AGENT_USER: logged in"
+  else
+    say "GitHub token of $AGENT_USER: none (run token)"
+  fi
 }
 
 # leaks: entries in the task-hub user's HOME that the agent can read (should be none).
@@ -243,7 +305,7 @@ leaks() {
       found=1
     fi
   done < <(side_entries)
-  ((found)) || say "$AGENT_USER cannot read anything in $OWNER_HOME outside ${SHARED[*]} ${READONLY[*]}"
+  ((found)) || say "$AGENT_USER cannot read anything in $OWNER_HOME outside ${SHARED[*]}"
   return "$found"
 }
 
@@ -300,13 +362,24 @@ step_check() {
     fi
   fi
   local g
-  g="$(find "${READONLY[@]}" -mindepth 1 -maxdepth 4 -name .git -type d -print -quit 2>/dev/null)"
+  g="$(find "$DATA/repos" -mindepth 1 -maxdepth 4 -name .git -type d -print -quit 2>/dev/null)"
   if [[ -n $g ]]; then
-    if as_agent test -w "$g" || as_agent test -w "$g/config" || as_agent test -w "$g/hooks"; then
-      bad "$AGENT_USER can write $g (hooks or config would run as $OWNER)"
+    # Committing writes objects, refs and the worktree's index under the main .git.
+    if as_agent test -w "$g/objects" && as_agent test -w "$g/refs/heads"; then
+      ok "$AGENT_USER can write $g (objects, refs) to commit"
     else
-      ok "$AGENT_USER can read but not write $g"
+      bad "$AGENT_USER cannot write $g/objects or $g/refs/heads, so it cannot commit"
     fi
+  fi
+  if as_agent git config --global user.email >/dev/null; then
+    ok "$AGENT_USER has a git identity"
+  else
+    bad "$AGENT_USER has no git identity (rerun install with AGENT_GIT_EMAIL=...)"
+  fi
+  if [[ -x $GH ]] && as_agent "$GH" auth status &>/dev/null; then
+    ok "$AGENT_USER is logged in to GitHub with its own token"
+  else
+    bad "$AGENT_USER has no GitHub token (sudo $0 token < token.txt)"
   fi
 
   if as_agent ls "$OWNER_HOME" &>/dev/null; then
@@ -328,20 +401,12 @@ step_uninstall() {
   fi
   local d p
   if id "$AGENT_USER" &>/dev/null; then
-    pkill -u "$AGENT_USER" 2>/dev/null || true
+    freeze_agent kill
     for d in "${SHARED[@]}"; do
       [[ -d $d ]] || continue
-      # Hand files made by the agent back to the task-hub user before the uid goes away.
+      # Hand files made by the agent back to the task-hub user before the uid goes away
+      # (chown -R walks physically and does not follow symlinks).
       chown -R -h --from="$AGENT_USER" "$OWNER" "$d"
-    done
-    while read -r p; do
-      setfacl -x "u:$AGENT_USER" "$p" 2>/dev/null || true
-    done < <(path_components; side_entries)
-    for d in "${READONLY[@]}"; do
-      [[ -d $d ]] || continue
-      find "$d" ! -type l -exec setfacl -x "u:$AGENT_USER" {} + 2>/dev/null || true
-      find "$d" -type d -exec setfacl -d -x "u:$AGENT_USER" {} + 2>/dev/null || true
-      say "$d: removed read access for $AGENT_USER"
     done
   fi
   for d in "${SHARED[@]}"; do
@@ -349,10 +414,15 @@ step_uninstall() {
     find "$d" ! -type l -exec setfacl -b {} +
     find "$d" -type d -perm -2000 -exec chmod g-s {} +
     if getent group "$AGENT_GROUP" >/dev/null; then
-      find "$d" ! -type l -group "$AGENT_GROUP" -exec chgrp "$OWNER_GROUP" {} +
+      find "$d" ! -type l -group "$AGENT_GROUP" -exec chgrp -h "$OWNER_GROUP" {} +
     fi
     say "unshared $d"
   done
+  if id "$AGENT_USER" &>/dev/null; then
+    while read -r p; do
+      setfacl -x "u:$AGENT_USER" "$p" 2>/dev/null || true
+    done < <(echo "$DATA"; path_components; side_entries)
+  fi
   if id "$AGENT_USER" &>/dev/null; then
     userdel "$AGENT_USER"
     rm -rf "$AGENT_HOME"
@@ -365,14 +435,14 @@ step_uninstall() {
 }
 
 usage() {
-  sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+  sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'
   exit "${1:-0}"
 }
 
 cmd="${1:-install}"
 case "$cmd" in
   -h | --help | help) usage 0 ;;
-  install | status | check | uninstall) ;;
+  install | token | status | check | uninstall) ;;
   *) usage 1 ;;
 esac
 [[ $EUID -eq 0 ]] || die "run with sudo: sudo $0 $cmd"
