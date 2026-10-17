@@ -1,0 +1,27 @@
+# VNC server for the Hyprland session, reachable over Tailscale only (see remote-desktop.md).
+# Installed to ~/.config/systemd/user/ by scripts/setup_remote_desktop.sh. The listen address
+# (the Tailscale IP), the password and the key paths live in ~/.config/wayvnc/config (mode 600).
+# uwsm starts and stops graphical-session.target with Hyprland, so this unit follows the session:
+# it does not run at boot under linger, only once someone (or SDDM autologin) has logged in.
+[Unit]
+Description=wayvnc VNC server for Hyprland (Tailscale only)
+Documentation=man:wayvnc(1)
+PartOf=graphical-session.target
+After=graphical-session.target
+Requisite=graphical-session.target
+ConditionPathExists=%h/.config/wayvnc/config
+# Binding fails until tailscale0 has its IP; keep retrying instead of giving up after 5 starts.
+StartLimitIntervalSec=0
+
+[Service]
+# --render-cursor draws the pointer into the picture; without it, phone clients show no cursor.
+# Extra flags, e.g. a monitor: `systemctl --user edit wayvnc` and add
+#   [Service]
+#   Environment="WAYVNC_EXTRA_ARGS=--output=HDMI-A-1"
+Environment=WAYVNC_EXTRA_ARGS=
+ExecStart=/usr/bin/wayvnc --config=%h/.config/wayvnc/config --render-cursor $WAYVNC_EXTRA_ARGS
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target
