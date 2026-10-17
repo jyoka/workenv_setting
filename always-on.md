@@ -82,6 +82,8 @@ sudo ufw status | grep 22       # 22/tcp on tailscale0 ALLOW IN だけがある�
 ssh <user>@<マシン名>            # 別の端末から、tailnet 経由で
 ```
 
+iPhone / iPad からデスクトップごと見て操作したいときは、この Tailscale の上に wayvnc を乗せる: [リモートデスクトップ](./remote-desktop.md)。
+
 ### SSH でのロック解除(initramfs)
 
 Arch の公式リポにある部品を組み合わせた:
