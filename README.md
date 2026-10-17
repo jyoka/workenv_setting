@@ -17,6 +17,7 @@
 - [Neovim](./nvim.md)
 - [シェルとターミナル](./shell-terminal.md)
 - [エージェントツール](./agent-tools.md)
+- [常時稼働マシン(Linux)](./always-on.md)
 - [トラブルシューティング](./troubleshooting.md)
 
 ## 記録のルール
