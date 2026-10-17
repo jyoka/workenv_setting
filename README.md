@@ -17,6 +17,7 @@
 - [Neovim](./nvim.md)
 - [シェルとターミナル](./shell-terminal.md)
 - [エージェントツール](./agent-tools.md)
+- [GitHub Actions のセルフホストランナー(Linux)](./actions-runner.md)
 - [トラブルシューティング](./troubleshooting.md)
 
 ## 記録のルール
