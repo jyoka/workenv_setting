@@ -22,7 +22,7 @@ GitHub Actions のランナー用の `github-runner`([GitHub Actions のセル�
 - **`joka` は worktree(`worktrees/`)と元のリポ(`repos/`)で git を動かさない。** どちらもエージェントが書ける。`.git/config`(`core.fsmonitor`、`core.hooksPath`、`core.sshCommand`、フィルターなど)や hooks を書き換えられると、`joka` が動かした `git status`・`add`・`commit`・`fetch`・`worktree add` の中でエージェントのコードが `joka` として動く。bwrap が破られたのと同じ道。task-hub がこれらの場所でやる git(clone・fetch・`worktree add`・commit・push)は全部 `sudo -n -u task-agent -H git ...` で動かし、結果(push されたブランチ、PR)は `joka` の gh で GitHub の API から読む
 - **git の所有者チェック(`safe.directory`、「dubious ownership」)はこの守りにならない。** git が見るのは worktree・`.git` ファイル・gitdir の持ち主だけで、スクリプトの ACL ではエージェントが `joka` 持ちのファイルやディレクトリも書き換えられる。たとえば `joka` 持ちの `.git` ファイルの中身を書き換えて `joka` 持ちの別のディレクトリ(中身はエージェントが作った `HEAD`・`objects/`・`config`)を指させたり、`joka` 持ちのディレクトリの名前を `.git` に変えたりできる。どれも持ち主は `joka` のままなので、`joka` の git はそのまま受け入れ、そこの `config` の `core.fsmonitor` を実行する。`-c core.fsmonitor=false -c core.hooksPath=/dev/null` を付けても、`config` で効く設定はほかにもある(`core.sshCommand`、`diff.external`、filter など)ので完全には防げない。だから「`joka` は git を動かさない」を守る
 - エージェントの GitHub トークンはエージェント自身が読める(`/var/lib/task-agent/.config/gh/hosts.yml`)。漏れても困らないよう、task のリポだけ・Contents と Pull requests だけ・期限付きにする(下の「GitHub のトークン」)
-- **スクリプトは、エージェントが書ける共有ディレクトリ(`worktrees/`・`repos/`)の中で、エージェントが動ける間は root でパスをたどるコマンドを動かさない。** `chgrp`・`chmod`・`setfacl` はシンボリックリンクをたどるので、`find` がパスを集めてからコマンドが動くまでの間にエージェントがディレクトリを `/etc` へのシンボリックリンクに差し替えると、root が `/etc/shadow` などに `task-agent` の rw を付けてしまう(root になれる)。そこで `install`・`uninstall` は、まず `~/.local/share/task-hub` に `task-agent` の `---` の ACL を付けて共有ディレクトリへの入口を閉じ(エージェントは `~/.local/share/task-hub` を書けないので、そこは差し替えられない)、`task-agent` のプロセスが残っていないことを確かめてから中をたどり、最後に入口を `--x` に戻す。`install` は `task-agent` のプロセスが動いていると共有ディレクトリの ACL を変える前に止まり、`uninstall` は止める。途中で失敗したときは入口が閉じたままになる(安全側。もう一度実行すれば戻る)。`chgrp` には `-h`、`uninstall` の `chown -R -h` はシンボリックリンクをたどらない
+- **スクリプトは、エージェントが動ける間は、エージェントが書ける共有ディレクトリ(`worktrees/`・`repos/`)の中を root でたどらない。** `chgrp`・`chmod`・`setfacl` はシンボリックリンクをたどるので、`find` がパスを集めてからコマンドが動くまでの間にエージェントがディレクトリを `/etc` へのシンボリックリンクに差し替えると、root が `/etc/shadow` などに `task-agent` の rw を付けてしまう(root になれる)。そこで `install` は、**何かを変える前に** `task-hub-watch` が止まっていて `task-agent` のプロセスが 1 つもないことを確かめ、そうでなければ何も変えずに止まる。次に `/etc/sudoers.d/task-agent` を消し(あれば)、ユーザー・ACL・git の設定を全部終えてから、**最後に** sudoers のルールを書く。だから `install` の間は `joka` からもエージェントを起動できない(途中で失敗したときはルールがないまま。安全側で、もう一度実行すれば戻る)。sudoers を書く直前にも `task-agent` のプロセスがないことを確かめる。`uninstall` は最初に sudoers を消し、`~/.local/share/task-hub` に `task-agent` の `---` の ACL を付けて入口を閉じ、残ったプロセスを止めてから中をたどる。`chgrp` には `-h`、`uninstall` の `chown -R -h` はシンボリックリンクをたどらない
 - `/home/joka` の中は、スクリプトを実行した時点にあったものに「`task-agent` は読めない」ACL を付けている。あとから `~` に増えたディレクトリ・ファイルは、名前を知っていれば読める可能性がある。`status` が警告を出すので、そのときは `install` をもう一度実行する(下の「仕組み」)
 
 ## インストール方法とバージョン
@@ -31,15 +31,22 @@ GitHub Actions のランナー用の `github-runner`([GitHub Actions のセル�
 
 ### セットアップ
 
-Linux 機でリポのルートから、**自分(`joka`)のアカウントで `sudo` を付けて** 実行する(`joka` が task-hub のユーザーになる。`SUDO_USER` から決まる):
+Linux 機でリポのルートから、**自分(`joka`)のアカウントで `sudo` を付けて** 実行する(`joka` が task-hub のユーザーになる。`SUDO_USER` から決まる)。**先に `task-hub-watch` を止め、終わったら起動し直す**(動いていると `install` は何も変えずに止まる。上の「セキュリティ」):
 
 ```bash
-sudo scripts/setup_agent_user.sh            # ユーザー・グループ・sudoers・ACL を作る(直す)
-sudo scripts/setup_agent_user.sh status     # 何が入っているか(変更しない)
+systemctl --user stop task-hub-watch        # 実行中のタスクがあれば終わるのを待つ
+sudo scripts/setup_agent_user.sh            # ユーザー・グループ・ACL・sudoers を作る(直す)
 sudo scripts/setup_agent_user.sh check      # 受け入れチェック(下の「確認」)
+systemctl --user start task-hub-watch
 ```
 
-何度実行してもよい。ユーザー・グループはないときだけ作り、sudoers は中身が違うときだけ書き換える。ACL は毎回付け直すので、ずれた権限の修復にもなる。ただし `task-agent` のプロセス(実行中のタスク)があると `install` は止まるので、タスクが動いていないときに実行する(下の「セキュリティ」)。最後に task-hub に設定する値を表示する:
+ほかのコマンド:
+
+```bash
+sudo scripts/setup_agent_user.sh status     # 何が入っているか(変更しない)
+```
+
+何度実行してもよい。ユーザー・グループはないときだけ作る。ACL は毎回付け直すので、ずれた権限の修復にもなる。`install` は `task-hub-watch` が動いているか `task-agent` のプロセス(実行中のタスク)があると、何も変えずに止まる。sudoers のルールは毎回いったん消して、最後に書き直す。最後に task-hub に設定する値を表示する:
 
 ```text
 task-hub settings:
@@ -241,7 +248,9 @@ sudo userdel task-agent && sudo rm -rf /var/lib/task-agent && sudo groupdel task
 ## 既知の問題と対処法
 
 - **`joka` が worktree のファイルを消せない・書けない**: ツールがモードを明示して作ったファイル・ディレクトリ(`mkdir -m 700`、`chmod 600` など)は ACL のマスクが狭まり、もう一方のユーザーが触れなくなる。root なしで直すには、**ファイルの持ち主が** `chmod -R g+rwX <path>` を実行する(ACL のあるファイルでは group のビットがマスクになるので、これでマスクが戻る)。`joka` の作ったものは `chmod -R g+rwX <path>`、`task-agent` の作ったものは `sudo -u task-agent -H chmod -R g+rwX <path>`(sudoers で許されている)。消すだけなら `sudo -u task-agent -H rm -rf <path>`。`sudo scripts/setup_agent_user.sh` をもう一度実行しても直る。task-hub は無人で root を使えないので、**エージェントの実行が終わったあと(worktree を消す前など)に `sudo -u task-agent -H chmod -R g+rwX <worktree>` を実行する**ようにする(`joka` 持ちのファイルには `Operation not permitted` が出るが、それは `joka` 側で `chmod -R g+rwX` すればよい。chmod は git ではないので `joka` で動かしてよい。task-hub 側の対応。まだ入っていない既知のすき間)
-- **`install` が `processes run as task-agent` で止まる**: タスクの実行中。タスクが終わるのを待つか、`sudo pkill -u task-agent` で止めてからもう一度実行する(エージェントが動いている間は、root で共有ディレクトリをたどれないため。上の「セキュリティ」)
+- **`install` が `task-hub-watch is running` で止まる**: `systemctl --user stop task-hub-watch` で止めてから実行し、終わったら `systemctl --user start task-hub-watch`。端末で `task watch` を動かしているときはそれも止める(スクリプトは `task watch` のプロセスも見る)
+- **`install` が `processes run as task-agent` で止まる**: タスクの実行中。タスクが終わるのを待つか、`sudo pkill -u task-agent` で止めてからもう一度実行する(エージェントが動いている間は、root で共有ディレクトリをたどれないため。上の「セキュリティ」)。止まったのが sudoers を消したあと(`started during the install`・`appeared during the install`)なら、ルールがないままなので、プロセスを止めて `install` をもう一度実行する
+- **`install` のあと `sudo -n -u task-agent` がパスワードを求める**: `install` が最後まで行かなかった(sudoers は最後に書く)。エラーを直して `install` をもう一度実行する
 - **`sudo: a password is required`(`task-agent` への sudo で)**: `/etc/sudoers.d/task-agent` がない、または `/etc/sudoers` が `/etc/sudoers.d` を読んでいない(スクリプトは `@includedir /etc/sudoers.d` がないと止まる)。`status` で確認
 - **エージェントの git が「dubious ownership」**: `task-agent` の `safe.directory` がない、または `TASKHUB_DATA` を変えた。`install` をもう一度実行する
 - **エージェントの `git add`・`git commit` が `Permission denied`**: `repos/` の中のファイルのマスクが狭まった(上と同じ)か、`install` のあとに task-hub が `joka` で新しいリポを clone した(ACL が付いていない)。`install` をもう一度実行する

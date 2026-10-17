@@ -115,8 +115,6 @@ step_user() {
 }
 
 step_sudoers() {
-  grep -Eqs '^[@#]includedir[[:space:]]+/etc/sudoers\.d' /etc/sudoers ||
-    die "/etc/sudoers does not include /etc/sudoers.d; add '@includedir /etc/sudoers.d' with visudo"
   local tmp
   tmp="$(mktemp)"
   # Run-as list is only the agent user: no root, no other user, no -g group. CWD=* allows
@@ -138,22 +136,38 @@ EOF
   visudo -cq || die "sudoers configuration is invalid after writing $SUDOERS; fix it with visudo"
 }
 
-# Cut the agent off from the shared directories before root walks them. find hands paths to
-# chgrp/chmod/setfacl, which follow symlinks, so an agent process could otherwise swap a
-# directory there for a symlink to /etc between the two and have root grant it rw on, say,
-# /etc/shadow. Its only way in is through $DATA (not agent-writable), where a named-user entry
-# of --- overrides group and other; processes already inside are refused (install) or killed
-# (uninstall). If the script stops halfway the agent simply stays cut off until the next run.
+# agent_running: whether any process runs as the agent user (prints them to stderr).
+agent_running() {
+  id "$AGENT_USER" &>/dev/null && pgrep -u "$AGENT_USER" >/dev/null || return 1
+  pgrep -a -u "$AGENT_USER" >&2 || true
+}
+
+# Root walks the shared directories with find, which hands paths to chgrp/chmod/setfacl; those
+# follow symlinks, so an agent process could swap a directory there for a symlink to /etc between
+# the two and have root grant it rw on, say, /etc/shadow. So no agent may run during the install:
+# refuse before changing anything unless task-hub-watch is stopped and no agent process exists
+# (step_install then keeps the sudoers rule away until everything else is done).
+preflight() {
+  grep -Eqs '^[@#]includedir[[:space:]]+/etc/sudoers\.d' /etc/sudoers ||
+    die "/etc/sudoers does not include /etc/sudoers.d; add '@includedir /etc/sudoers.d' with visudo"
+  local state
+  state="$(systemctl --user -M "$OWNER@" show task-hub-watch.service -p ActiveState --value 2>/dev/null || true)"
+  if [[ -n $state && $state != inactive && $state != failed ]] ||
+    pgrep -u "$OWNER" -f '(^|/)task watch( |$)' >/dev/null; then
+    die "task-hub-watch is running; stop it (systemctl --user stop task-hub-watch), rerun, then start it again"
+  fi
+  ! agent_running ||
+    die "processes run as $AGENT_USER (above); wait for the tasks to finish (or sudo pkill -u $AGENT_USER) and rerun"
+}
+
+# uninstall: cut the agent off before root walks the shared directories (its only way in is
+# through $DATA, which it cannot write; a named-user entry of --- overrides group and other),
+# then kill what is still running. The sudoers rule is already gone, so nothing new can start.
 freeze_agent() {
   [[ ! -d $DATA ]] || setfacl -m "u:$AGENT_USER:---" "$DATA"
   local i
   for ((i = 0; i < 20; i++)); do
     pgrep -u "$AGENT_USER" >/dev/null || return 0
-    if [[ $1 != kill ]]; then
-      setfacl -m "u:$AGENT_USER:--x" "$DATA"
-      pgrep -a -u "$AGENT_USER" >&2 || true
-      die "processes run as $AGENT_USER (above); stop the task-hub tasks (or sudo pkill -u $AGENT_USER) and rerun"
-    fi
     pkill -KILL -u "$AGENT_USER" || true
     sleep 0.5
   done
@@ -163,9 +177,9 @@ freeze_agent() {
 step_acls() {
   local d spec="u:$OWNER:rwX,u:$AGENT_USER:rwX,g:$AGENT_GROUP:rwX"
   for d in "${SHARED[@]}"; do
-    [[ -d $d ]] || install -d -m755 -o "$OWNER" -g "$OWNER_GROUP" "$d"
+    # As the owner, so missing parents ($DATA itself on a fresh machine) are not root's.
+    [[ -d $d ]] || as_owner mkdir -p "$d"
   done
-  freeze_agent refuse
   for d in "${SHARED[@]}"; do
     # Group ownership and setgid so new files stay in the shared group; access ACLs on what
     # exists and default ACLs on directories so new files get them too. The named-user entries
@@ -256,17 +270,27 @@ task-hub settings:
   run a command as the agent:  sudo -n -u $AGENT_USER -H -D <worktree> -- <command>
 
 Log out and in again (or reboot) so $OWNER's sessions and user services pick up the group.
-Then: sudo $0 check
+Then: sudo $0 check, and start task-hub-watch again (systemctl --user start task-hub-watch).
 EOF
 }
 
 step_install() {
   say "install: user $AGENT_USER, group $AGENT_GROUP, sudoers, ACLs for $OWNER"
+  preflight
+  # Nobody can start an agent while the install runs: the rule goes now and is written back
+  # as the last step. If the install stops halfway, it stays away until a rerun completes.
+  if [[ -f $SUDOERS ]]; then
+    rm -f "$SUDOERS"
+    say "removed $SUDOERS until the install is done"
+  fi
+  ! agent_running ||
+    die "processes run as $AGENT_USER (above) started during the install; stop them and rerun"
   command -v setfacl >/dev/null || pacman -S --needed --noconfirm acl
   step_user
-  step_sudoers
   step_acls
   step_git
+  ! agent_running || die "processes run as $AGENT_USER (above) appeared during the install; not writing $SUDOERS"
+  step_sudoers
   print_values
 }
 
